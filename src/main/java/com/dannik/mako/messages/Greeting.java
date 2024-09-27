@@ -10,4 +10,5 @@ import lombok.NoArgsConstructor;
 public class Greeting {
 
   private String message;
+  private String activeGame;
 }
