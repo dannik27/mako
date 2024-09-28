@@ -1,6 +1,8 @@
 package com.dannik.mako.services;
 
+import com.dannik.mako.controllers.GameSessionController;
 import com.dannik.mako.model.Game;
+import com.dannik.mako.model.GameStatus;
 import com.dannik.mako.model.User;
 import com.dannik.mako.repositories.GameRepository;
 import com.dannik.mako.repositories.UserRepository;
@@ -18,9 +20,10 @@ public class GameService {
 
   private final GameRepository gameRepository;
   private final UserRepository userRepository;
+  private final GameSessionService sessionService;
   private final UserNotifier notifier;
 
-  public Game startGame(String name, String username) {
+  public Game createGame(String name, String username) {
     User user = userRepository.getOrCreate(username);
 
     Game newGame = new Game();
@@ -29,6 +32,8 @@ public class GameService {
     players.add(user);
     newGame.setPlayers(players);
     newGame.setName(name);
+    newGame.setAuthor(user);
+    newGame.setStatus(GameStatus.CREATED);
     gameRepository.saveGame(newGame);
     notifier.notifyGameUpdate(newGame);
     return newGame;
@@ -44,12 +49,29 @@ public class GameService {
     }).orElse(null);
   }
 
+  public Game startGame(String gameId, String username) {
+    User user = userRepository.getOrCreate(username);
+
+    return gameRepository.findGameById(gameId).map(game -> {
+      game.setStatus(GameStatus.IN_PROGRESS);
+      sessionService.init(game);
+      notifier.notifyGameUpdate(game);
+      return game;
+    }).orElse(null);
+  }
+
   public Game leaveGame(String gameId, String username) {
     User user = userRepository.getOrCreate(username);
 
     return gameRepository.findGameById(gameId).map(game -> {
-      game.getPlayers().remove(user);
-      notifier.notifyGameUpdate(game);
+
+      if (game.getStatus() == GameStatus.CREATED && user.equals(game.getAuthor())) {
+        gameRepository.deleteGame(gameId);
+        notifier.notifyGameDelete(game);
+      } else {
+        game.getPlayers().remove(user);
+        notifier.notifyGameUpdate(game);
+      }
       return game;
     }).orElse(null);
   }

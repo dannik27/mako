@@ -4,6 +4,7 @@ import com.dannik.mako.messages.*;
 import com.dannik.mako.model.Game;
 import com.dannik.mako.model.User;
 import com.dannik.mako.services.GameService;
+import com.dannik.mako.services.GameSessionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.*;
 import org.springframework.messaging.simp.annotation.SendToUser;
@@ -18,6 +19,7 @@ import java.util.Optional;
 public class HelloController {
 
   private final GameService gameService;
+  private final GameSessionService sessionService;
 
   @MessageMapping("/hello")
   @SendToUser("/topic/greeting")
@@ -25,30 +27,45 @@ public class HelloController {
                            @Header("username") String username) throws Exception {
 
     Optional<Game> activeGame = gameService.getActiveGame(username);
-    String activeGameId = activeGame.map(Game::getId).orElse(null);
+    GameDto activeGameDto = activeGame.map(GameDto::of).orElse(null);
 
-    return new Greeting("Hello, " + HtmlUtils.htmlEscape(message.getClientName()) + "!", activeGameId);
+    return new Greeting("Hello, " + HtmlUtils.htmlEscape(message.getClientName()) + "!", activeGameDto);
   }
 
-  @MessageMapping("/game/{gameId}/state")
-  @SendToUser("/topic/game/{gameId}/state")
-  public Greeting greeting(@Payload HelloMessage message,
+//  @MessageMapping("/game/{gameId}/state")
+//  @SendToUser("/topic/game/{gameId}/state")
+//  public Greeting greeting(@Payload HelloMessage message,
+//                           @Header("username") String username,
+//                           @DestinationVariable("gameId") String gameId) throws Exception {
+//
+//    Optional<Game> activeGame = gameService.getActiveGame(username);
+//    GameDto activeGameDto = activeGame.map(GameDto::of).orElse(null);
+//
+//    return new Greeting("Hello, " + HtmlUtils.htmlEscape(message.getClientName()) + "!", activeGameDto);
+//  }
+
+  @MessageMapping("/game/create")
+  @SendToUser("/topic/greeting")
+  public Greeting createGame(@Payload StartGameRequest message,
+                            @Header("username") String username) throws Exception {
+    Game game = gameService.createGame(message.getName(), username);
+    String activeGameId = game.getId();
+    return new Greeting("New game is created", GameDto.of(game));
+  }
+
+  @MessageMapping("/game/{gameId}/start")
+  @SendToUser("/topic/greeting")
+  public Greeting startGame(@Payload ListGamesRequest request,
                            @Header("username") String username,
                            @DestinationVariable("gameId") String gameId) throws Exception {
 
-    Optional<Game> activeGame = gameService.getActiveGame(username);
-    String activeGameId = activeGame.map(Game::getId).orElse(null);
+    Game game = gameService.startGame(gameId, username);
 
-    return new Greeting("Hello, " + HtmlUtils.htmlEscape(message.getClientName()) + "!", activeGameId);
-  }
-
-  @MessageMapping("/game/start")
-  @SendToUser("/topic/greeting")
-  public Greeting startGame(@Payload StartGameRequest message,
-                            @Header("username") String username) throws Exception {
-    Game game = gameService.startGame(message.getName(), username);
-    String activeGameId = game.getId();
-    return new Greeting("New game is created", activeGameId);
+    if (game != null) {
+      return new Greeting("You joined the game", GameDto.of(game));
+    } else {
+      return new Greeting("Game is not exist", null);
+    }
   }
 
   @MessageMapping("/games/list")
@@ -67,7 +84,7 @@ public class HelloController {
     Game game = gameService.joinGame(gameId, username);
 
     if (game != null) {
-      return new Greeting("You joined the game", gameId);
+      return new Greeting("You joined the game", GameDto.of(game));
     } else {
       return new Greeting("Game is not exist", null);
     }

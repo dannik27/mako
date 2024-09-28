@@ -11,6 +11,8 @@ public class Game {
   private String id;
   private String name;
   private List<User> players;
+  private User author;
+  private GameStatus status;
 
   public Game() {}
 
@@ -18,6 +20,7 @@ public class Game {
     this.id = name;
     this.name = name;
     this.players = new ArrayList<>();
+    this.status = GameStatus.CREATED;
   }
 
 }

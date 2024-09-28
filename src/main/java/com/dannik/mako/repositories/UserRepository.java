@@ -7,12 +7,13 @@ import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Component
 public class UserRepository {
 
-  private final Map<String, User> users = new HashMap<>();
+  private final Map<String, User> users = new ConcurrentHashMap<>();
 
   public User getOrCreate(String username) {
     return users.computeIfAbsent(username, u -> {

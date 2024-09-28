@@ -51,60 +51,51 @@
                     <tr>
                         <th>Games</th>
                         <th>Players</th>
+                        <th>Author</th>
                     </tr>
                     </thead>
                     <tbody>
                         <tr v-for="game in games">
                             <th>{{ game.name }}</th>
-                            <th>{{ game.playersCount }} / 5</th>
+                            <th>{{ game.players.length }} / 5</th>
+                            <th>{{ game.authorName }}</th>
                             <th><button v-on:click="join(game.id)" type="button"> Join </button></th>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
-
-
-        <div class="row">
-
-            <div class="col-md-6">
-                <form class="form-inline">
-                    <div class="form-group">
-                        <label for="name">What is your name?</label>
-                        <input type="text" id="nameq" class="form-control" placeholder="Your name here...">
-                    </div>
-                    <button id="send" class="btn btn-default" type="submit">Send</button>
-                    <button id="listGames" class="btn btn-default" type="submit">List games</button>
-                </form>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-12">
-                <table id="conversation" class="table table-striped">
-                    <thead>
-                    <tr>
-                        <th>Greetings</th>
-                    </tr>
-                    </thead>
-                    <tbody id="greetings">
-                    </tbody>
-                </table>
-                <table id="games_list" class="table table-striped">
-                    <thead>
-                    <tr>
-                        <th>Games</th>
-                    </tr>
-                    </thead>
-                    <tbody id="games">
-                    </tbody>
-                </table>
-            </div>
-        </div>
     </div>
+    <div v-if="showLobbyScreen" class="container">
+
+        The game {{ currentGame.name }}
+        <button v-on:click="leave">leave</button>
+        <button v-on:click="startGame()" type="button"> Start </button>
+
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>Players</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="player in currentGame.players">
+                <th>{{ player }}</th>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
     <div v-if="showGameScreen" class="container">
 
-        The game <button v-on:click="leave">leave</button>
+        The game {{ currentGame.name }}
+
+        <div v-for="(value, name) in opponents" :key="name">
+            opponent {{ name }}
+        </div>
+
+        money: {{ playerState.money }}
+
     </div>
 </div>
 

@@ -1,10 +1,12 @@
 package com.dannik.mako.messages;
 
 import com.dannik.mako.model.Game;
+import com.dannik.mako.model.User;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.Optional;
 
 @Data
 public class ListGamesResponse {
@@ -13,17 +15,5 @@ public class ListGamesResponse {
 
   public static ListGamesResponse of(List<Game> games) {
     return new ListGamesResponse(games.stream().map(GameDto::of).toList());
-  }
-
-  @Data
-  @RequiredArgsConstructor
-  public static class GameDto {
-    private final String id;
-    private final String name;
-    private final int playersCount;
-
-    public static GameDto of(Game game) {
-      return new GameDto(game.getId(), game.getName(), game.getPlayers().size());
-    }
   }
 }

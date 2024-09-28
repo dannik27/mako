@@ -11,16 +11,34 @@ const stompClient = new StompJs.Client({
 createApp({
   setup() {
 
+    const MENU_SCREEN = 'main-menu'
+    const LOBBY_SCREEN = 'lobby'
+    const GAME_SCREEN = 'game'
+
     const username = ref('')
-    const gameId = ref('')
     const newGameName = ref('')
 
     const connected = ref(false)
     const mainScreen = ref('login')
-    const showMainMenu = computed(() => mainScreen.value == 'main-menu')
-    const showGameScreen = computed(() => mainScreen.value == 'game')
+    const showMainMenu = computed(() => mainScreen.value == MENU_SCREEN)
+    const showLobbyScreen = computed(() => mainScreen.value == LOBBY_SCREEN)
+    const showGameScreen = computed(() => mainScreen.value == GAME_SCREEN)
     const games = ref([])
+    const currentGame = ref(null)
 
+    const playerState = ref({money: 0})
+    const opponents = ref({})
+
+
+    const onGameStateReceived = (message) => {
+        console.log("Game state received: " + message['body'])
+        playerState.value = JSON.parse(message['body'])['players'][username.value]
+        opp = JSON.parse(message['body'])['players']
+        delete opp[username.value]
+        opponents.value = opp
+
+//        .filter(player => player.name != username.value)
+    }
 
     const onWsConnect = (frame) => {
       console.log('Connected: ' + frame);
@@ -29,12 +47,27 @@ createApp({
           let body = JSON.parse(message['body'])
           console.log(body)
           if (body.activeGame) {
+            currentGame.value = body.activeGame
             console.log("Game already started");
-            gameId.value = body.activeGame
-            mainScreen.value = 'game'
+            stompClient.subscribe(`/topic/game/${currentGame.value.id}/state`, onGameStateReceived);
+
+
+
+            if (currentGame.value.status == 'CREATED') {
+                mainScreen.value = LOBBY_SCREEN
+            } else {
+                mainScreen.value = GAME_SCREEN
+
+                stompClient.publish({
+                    destination: `/app/session/${currentGame.value.id}/state`,
+                    body: "{}",
+                    headers: { username: username.value }
+                });
+            }
 //            showGame(body.activeGame);
           } else {
-            mainScreen.value = 'main-menu'
+            currentGame.value = null
+            mainScreen.value = MENU_SCREEN
             stompClient.publish({
                 destination: "/app/games/list",
                 body: "{}",
@@ -53,14 +86,23 @@ createApp({
       stompClient.subscribe('/topic/games/update', (message) => {
           console.log("Game update received: " + message['body'])
           for (let [key, value] of Object.entries(JSON.parse(message['body'])['games'])) {
-              let found = false
-              games.value.forEach((item, i) => {
-                if (item.id == key) {
-                  games.value[i] = value;
-                  found = true;
-                }
-              });
-              if (!found) {
+
+              if (currentGame.value && currentGame.value.id == key) {
+                  currentGame.value = value
+                  if (currentGame.value.status == 'CREATED') {
+                      mainScreen.value = LOBBY_SCREEN
+                  } else {
+                      mainScreen.value = GAME_SCREEN
+                  }
+              }
+
+              let index = games.value.findIndex(game => game.id == key)
+
+              if (index > -1 && value == null) {
+                games.value.splice(index, 1)
+              } else if (index > -1) {
+                games.value[index] = value
+              } else {
                 games.value.push(value)
               }
           }
@@ -95,7 +137,7 @@ createApp({
 
     const leave = () => {
       stompClient.publish({
-          destination: `/app/game/${gameId.value}/leave`,
+          destination: `/app/game/${currentGame.value.id}/leave`,
           body: "{}",
           headers: { username: username.value }
       });
@@ -103,9 +145,17 @@ createApp({
 
     const createGame = () => {
       stompClient.publish({
-          destination: "/app/game/start",
+          destination: "/app/game/create",
           body: JSON.stringify({'name': newGameName.value}),
-          headers: { username: username }
+          headers: { username: username.value }
+      });
+    }
+
+    const startGame = () => {
+      stompClient.publish({
+          destination: `/app/game/${currentGame.value.id}/start`,
+          body: "{}",
+          headers: { username: username.value }
       });
     }
 
@@ -139,6 +189,7 @@ createApp({
       connect,
       disconnect,
       showMainMenu,
+      showLobbyScreen,
       showGameScreen,
       message,
 
@@ -147,7 +198,12 @@ createApp({
       leave,
 
       newGameName,
-      createGame
+      createGame,
+      currentGame,
+      startGame,
+
+      playerState,
+      opponents
     }
   }
 }).mount('#app')
