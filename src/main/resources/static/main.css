@@ -13,3 +13,13 @@ body {
     -moz-border-radius: 5px;
     border-radius: 5px;
 }
+
+.opponents-panel {
+    border: solid 1px red;
+    width: 200px;
+    padding: 10px;
+}
+
+.opponents-panel > div {
+    border: solid 1px black;
+}

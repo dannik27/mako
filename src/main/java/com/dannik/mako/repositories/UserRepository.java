@@ -18,7 +18,7 @@ public class UserRepository {
   public User getOrCreate(String username) {
     return users.computeIfAbsent(username, u -> {
       log.info("New user {} created", username);
-      return new User(username);
+      return new User(username, true);
     });
   }
 }

@@ -30,5 +30,21 @@ public class GameSessionController {
     sessionService.requestState(gameId);
   }
 
+  @MessageMapping("/session/{gameId}/dice")
+  public void diceRoll(@Payload HelloMessage message,
+                           @Header("username") String username,
+                           @DestinationVariable("gameId") String gameId) throws Exception {
+
+    sessionService.diceRoll(gameId, username);
+  }
+
+  @MessageMapping("/session/{gameId}/buy")
+  public void buyCard(@Payload BuyCardMessage message,
+                       @Header("username") String username,
+                       @DestinationVariable("gameId") String gameId) throws Exception {
+
+    sessionService.buyCard(gameId, username, message.getName());
+  }
+
 
 }

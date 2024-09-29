@@ -8,5 +8,6 @@ import lombok.Data;
 public class User {
 
   private String username;
+  private boolean online;
 
 }

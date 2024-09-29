@@ -28,14 +28,20 @@ createApp({
 
     const playerState = ref({money: 0})
     const opponents = ref({})
+    const activePlayer = ref('')
 
 
     const onGameStateReceived = (message) => {
         console.log("Game state received: " + message['body'])
-        playerState.value = JSON.parse(message['body'])['players'][username.value]
-        opp = JSON.parse(message['body'])['players']
-        delete opp[username.value]
-        opponents.value = opp
+        let newState = JSON.parse(message['body'])
+
+        let currentPlayerIndex = newState['players'].findIndex(player => player.name == username.value)
+        console.log(currentPlayerIndex)
+
+        playerState.value = newState['players'][currentPlayerIndex]
+        opponents.value = newState['players'].toSpliced(currentPlayerIndex, 1)
+
+        activePlayer.value = newState.activePlayer
 
 //        .filter(player => player.name != username.value)
     }
@@ -169,15 +175,32 @@ createApp({
         stompClient.activate();
     }
 
-//    onMounted(() => {
-//      username.value = 'Danya'
-//      connect()
-//    })
+    onMounted(() => {
+      username.value = 'qwe'
+      connect()
+    })
 
 
     const disconnect = () => {
         stompClient.deactivate();
         connected.value = false
+    }
+
+
+    const diceRoll = () => {
+        stompClient.publish({
+            destination: `/app/session/${currentGame.value.id}/dice`,
+            body: "{}",
+            headers: { username: username.value }
+        });
+    }
+
+    const buyCard = (cardName) => {
+        stompClient.publish({
+            destination: `/app/session/${currentGame.value.id}/buy`,
+            body: JSON.stringify({ name: cardName}),
+            headers: { username: username.value }
+        });
     }
 
 
@@ -203,7 +226,11 @@ createApp({
       startGame,
 
       playerState,
-      opponents
+      opponents,
+      activePlayer,
+
+      diceRoll,
+      buyCard
     }
   }
 }).mount('#app')

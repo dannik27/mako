@@ -89,10 +89,26 @@
     <div v-if="showGameScreen" class="container">
 
         The game {{ currentGame.name }}
+        <div style="display:flex;flex-direction:row;">
+            <div class="opponents-panel">
+                <div v-for="opponent in opponents" :key="name" >
+                    <b>{{ opponent.name }}</b> money: {{ opponent.money }}
+                    <p>
+                    <div v-for="(count, card) in opponent.cards" :key="card" style="display:inline;padding:2px;">
+                        {{ card }} <span v-if="count > 0">(x{{ count }})</span>,
+                    </div>
+                    </p>
 
-        <div v-for="(value, name) in opponents" :key="name">
-            opponent {{ name }}
+                </div>
+            </div>
+            <div class="action-panel">
+                Active player: {{ activePlayer }}
+                <button v-on:click="diceRoll()" type="button"> Dice </button>
+                <button v-on:click="buyCard('forest')" type="button"> Forest </button>
+            </div>
         </div>
+
+
 
         money: {{ playerState.money }}
 
