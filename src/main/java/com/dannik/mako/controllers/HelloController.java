@@ -90,6 +90,24 @@ public class HelloController {
     }
   }
 
+  record AddBotRequest(String botName) {};
+
+  @MessageMapping("/game/{gameId}/add-bot")
+  public void addBot(@Payload AddBotRequest request,
+                           @Header("username") String username,
+                           @DestinationVariable("gameId") String gameId) throws Exception {
+
+    gameService.addBot(gameId, username, request.botName());
+  }
+
+  @MessageMapping("/game/{gameId}/remove-bot")
+  public void removeBot(@Payload AddBotRequest request,
+                     @Header("username") String username,
+                     @DestinationVariable("gameId") String gameId) throws Exception {
+
+    gameService.removeBot(gameId, username, request.botName());
+  }
+
   @MessageMapping("/game/{gameId}/leave")
   @SendToUser("/topic/greeting")
   public Greeting leaveGame(@Payload ListGamesRequest request,

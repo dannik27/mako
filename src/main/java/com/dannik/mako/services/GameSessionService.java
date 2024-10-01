@@ -86,6 +86,29 @@ public class GameSessionService {
 
   }
 
+  public void skipBuild(String gameId, String username) {
+    GameState state = sessions.get(gameId);
+    if (state.getPhase() != GameState.GamePhase.BUILD) {
+      log.error("Wrong phase");
+      return; //TODO: handle
+    }
+
+    GameState.PlayerState activePlayer = state.getPlayers().get(state.getActivePlayer());
+    if (!activePlayer.getUser().getUsername().equals(username)) {
+      log.error("It is not your turn: {} != {}", activePlayer.getUser().getUsername(), username);
+      return;
+    }
+
+    if (state.getActivePlayer() < state.getPlayers().size() - 1) {
+      state.setActivePlayer(state.getActivePlayer() + 1);
+    } else {
+      state.setActivePlayer(0);
+    }
+
+    state.setPhase(GameState.GamePhase.DICE);
+    notifier.notifyGameState(state);
+  }
+
   public void buyCard(String gameId, String username, String cardName) {
     GameState state = sessions.get(gameId);
     if (state.getPhase() != GameState.GamePhase.BUILD) {

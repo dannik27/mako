@@ -13,12 +13,15 @@ import java.util.Optional;
 public class GameDto {
   private final String id;
   private final String name;
-  private final List<String> players;
+  private final List<Player> players;
   private final String authorName;
   private final String status;
 
+  record Player(String name, boolean isBot) {};
+
   public static GameDto of(Game game) {
-    return new GameDto(game.getId(), game.getName(), game.getPlayers().stream().map(User::getUsername).toList(),
+    return new GameDto(game.getId(), game.getName(),
+        game.getPlayers().stream().map(user -> new Player(user.getUsername(), user.isBot())).toList(),
         Optional.ofNullable(game.getAuthor()).map(User::getUsername).orElse(null), game.getStatus().name());
   }
 }

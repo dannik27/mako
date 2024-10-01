@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 public class UserNotifier {
 
   private final SimpMessageSendingOperations messagingTemplate;
+  private final BotService botService;
 
   public void notifyGameUpdate(Game game) {
     log.info("Notify game update: {}", game.getId());
@@ -30,7 +31,9 @@ public class UserNotifier {
   public void notifyGameState(GameState state) {
     String gameId = state.getGame().getId();
     log.info("Notify game state: {}", gameId);
-    messagingTemplate.convertAndSend("/topic/game/%s/state".formatted(gameId), GameStateResponse.of(state));
+    GameStateResponse response = GameStateResponse.of(state);
+    messagingTemplate.convertAndSend("/topic/game/%s/state".formatted(gameId), response);
+    botService.notifyBots(response, gameId);
   }
 
 }

@@ -7,6 +7,7 @@ import com.dannik.mako.model.User;
 import com.dannik.mako.repositories.GameRepository;
 import com.dannik.mako.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class GameService {
@@ -47,6 +49,26 @@ public class GameService {
       notifier.notifyGameUpdate(game);
       return game;
     }).orElse(null);
+  }
+
+  public void addBot(String gameId, String username, String botName) {
+    User bot = userRepository.getByName(botName)
+        .orElseThrow(() -> new RuntimeException("Bot with name " + botName + " not found"));
+
+    gameRepository.findGameById(gameId).ifPresentOrElse(game -> {
+      game.getPlayers().add(bot);
+      notifier.notifyGameUpdate(game);
+    }, () -> log.error("Game not found: " + gameId));
+  }
+
+  public void removeBot(String gameId, String username, String botName) {
+    User bot = userRepository.getByName(botName)
+        .orElseThrow(() -> new RuntimeException("Bot with name " + botName + " not found"));
+
+    gameRepository.findGameById(gameId).ifPresentOrElse(game -> {
+      game.getPlayers().remove(bot);
+      notifier.notifyGameUpdate(game);
+    }, () -> log.error("Game not found: " + gameId));
   }
 
   public Game startGame(String gameId, String username) {

@@ -46,5 +46,13 @@ public class GameSessionController {
     sessionService.buyCard(gameId, username, message.getName());
   }
 
+  @MessageMapping("/session/{gameId}/skip-build")
+  public void skipBuild(@Payload BuyCardMessage message,
+                      @Header("username") String username,
+                      @DestinationVariable("gameId") String gameId) throws Exception {
+
+    sessionService.skipBuild(gameId, username);
+  }
+
 
 }

@@ -71,6 +71,7 @@
         The game {{ currentGame.name }}
         <button v-on:click="leave">leave</button>
         <button v-on:click="startGame()" type="button"> Start </button>
+        <button v-on:click="addBot('MrBlue')" type="button"> Add bot </button>
 
         <table class="table table-striped">
             <thead>
@@ -80,7 +81,10 @@
             </thead>
             <tbody>
             <tr v-for="player in currentGame.players">
-                <th>{{ player }}</th>
+                <th>
+                    <span>{{ player.name }}</span>
+                    <span v-if="player.isBot"> <button v-on:click="removeBot(player.name)" type="button"> Remove </button> </span>
+                </th>
             </tr>
             </tbody>
         </table>
@@ -102,9 +106,14 @@
                 </div>
             </div>
             <div class="action-panel">
-                Active player: {{ activePlayer }}
-                <button v-on:click="diceRoll()" type="button"> Dice </button>
-                <button v-on:click="buyCard('forest')" type="button"> Forest </button>
+                <div>Active player: {{ activePlayer }}</div>
+                <div v-if="activePlayer == username && gamePhase == 'DICE'">
+                    <button v-on:click="diceRoll()" type="button"> Dice </button>
+                </div>
+                <div v-if="activePlayer == username && gamePhase == 'BUILD'">
+                    <button v-on:click="buyCard('forest')" type="button"> Forest </button>
+                    <button v-on:click="skipBuild()" type="button"> Skip </button>
+                </div>
             </div>
         </div>
 

@@ -29,6 +29,7 @@ createApp({
     const playerState = ref({money: 0})
     const opponents = ref({})
     const activePlayer = ref('')
+    const gamePhase = ref('')
 
 
     const onGameStateReceived = (message) => {
@@ -42,6 +43,7 @@ createApp({
         opponents.value = newState['players'].toSpliced(currentPlayerIndex, 1)
 
         activePlayer.value = newState.activePlayer
+        gamePhase.value = newState.phase
 
 //        .filter(player => player.name != username.value)
     }
@@ -165,6 +167,22 @@ createApp({
       });
     }
 
+    const addBot = (botName) => {
+      stompClient.publish({
+          destination: `/app/game/${currentGame.value.id}/add-bot`,
+          body: JSON.stringify({'botName': botName}),
+          headers: { username: username.value }
+      });
+    }
+
+    const removeBot = (botName) => {
+      stompClient.publish({
+          destination: `/app/game/${currentGame.value.id}/remove-bot`,
+          body: JSON.stringify({'botName': botName}),
+          headers: { username: username.value }
+      });
+    }
+
     const connect = () => {
         if (username.value == null || username.value.length == 0) {
           console.log("Username must not be empty")
@@ -203,6 +221,14 @@ createApp({
         });
     }
 
+    const skipBuild = () => {
+        stompClient.publish({
+            destination: `/app/session/${currentGame.value.id}/skip-build`,
+            body: "{}",
+            headers: { username: username.value }
+        });
+    }
+
 
 
     const message = ref('Hello vue!')
@@ -224,13 +250,17 @@ createApp({
       createGame,
       currentGame,
       startGame,
+      addBot,
+      removeBot,
 
       playerState,
       opponents,
       activePlayer,
+      gamePhase,
 
       diceRoll,
-      buyCard
+      buyCard,
+      skipBuild
     }
   }
 }).mount('#app')

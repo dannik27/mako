@@ -31,13 +31,14 @@ public class GameStateResponse {
   public static class PlayerStateDto {
     private final String name;
     private final boolean online;
+    private final boolean bot;
     private final int money;
     private final Map<String, Integer> cards;
     private final List<GameState.MoneyChange> lastMoneyChange;
 
     public static PlayerStateDto of(GameState.PlayerState state) {
-      return new PlayerStateDto(state.getUser().getUsername(), state.getUser().isOnline(), state.getMoney(),
-          state.getCards(), state.getLastMoneyChange());
+      return new PlayerStateDto(state.getUser().getUsername(), state.getUser().isOnline(), state.getUser().isBot(),
+          state.getMoney(), state.getCards(), state.getLastMoneyChange());
     }
   }
 

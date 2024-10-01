@@ -9,5 +9,6 @@ public class User {
 
   private String username;
   private boolean online;
+  private boolean bot;
 
 }
