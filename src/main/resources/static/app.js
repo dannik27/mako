@@ -31,6 +31,12 @@ createApp({
     const activePlayer = ref('')
     const gamePhase = ref('')
 
+    const cards = ref('')
+
+    const onCardsReceived = (message) => {
+      console.log("Cards received: " + message['body'])
+      cards.value = JSON.parse(message['body'])
+    }
 
     const onGameStateReceived = (message) => {
         console.log("Game state received: " + message['body'])
@@ -58,6 +64,7 @@ createApp({
             currentGame.value = body.activeGame
             console.log("Game already started");
             stompClient.subscribe(`/topic/game/${currentGame.value.id}/state`, onGameStateReceived);
+            stompClient.subscribe(`/topic/game/${currentGame.value.id}/cards`, onCardsReceived);
 
 
 
@@ -257,6 +264,7 @@ createApp({
       opponents,
       activePlayer,
       gamePhase,
+      cards,
 
       diceRoll,
       buyCard,

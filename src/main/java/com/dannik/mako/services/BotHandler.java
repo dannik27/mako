@@ -18,9 +18,9 @@ public interface BotHandler {
             .stream().filter(p -> p.getName().equals(username)).findFirst().get();
         int money = player.getMoney();
         if (money >= 3) {
-          gameSessionService.buyCard(gameId, username, "forest");
+          gameSessionService.buyCard(gameId, username, "Forest");
         } else if (money >= 1) {
-          gameSessionService.buyCard(gameId, username, "wheat");
+          gameSessionService.buyCard(gameId, username, "Wheat");
         } else {
           gameSessionService.skipBuild(gameId, username);
         }

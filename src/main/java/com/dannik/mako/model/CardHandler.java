@@ -25,86 +25,29 @@ public interface CardHandler {
     BLUE, GREEN, RED, PURPLE
   }
 
-  class Bakery implements CardHandler {
-    @Override
-    public void handle(GameState.PlayerState player, List<GameState.PlayerState> opponents, int count) {
-      add(player, 1 * count);
-    }
-
-    @Override
-    public List<Integer> getNumbers() {
-      return List.of(2, 3);
-    }
-
-    @Override
-    public int getPrice() {
-      return 1;
-    }
-
-    @Override
-    public Color getColor() {
-      return Color.GREEN;
-    }
-
-    @Override
-    public String getName() {
-      return "bakery";
-    }
+  static CardHandler simpleBlue(String name, int price, int income, List<Integer> numbers) {
+    return new CardHandler() {
+      @Override public Color getColor() { return Color.BLUE; }
+      @Override public String getName() { return name; }
+      @Override
+      public void handle(GameState.PlayerState player, List<GameState.PlayerState> opponents, int count) {
+        add(player, income * count);
+      }
+      @Override public List<Integer> getNumbers() { return numbers; }
+      @Override public int getPrice() { return price;}
+    };
   }
 
-  class Wheat implements CardHandler {
-
-    @Override
-    public void handle(GameState.PlayerState player, List<GameState.PlayerState> opponents, int count) {
-      add(player, 1 * count);
-    }
-
-    @Override
-    public List<Integer> getNumbers() {
-      return List.of(1);
-    }
-
-    @Override
-    public int getPrice() {
-      return 1;
-    }
-
-    @Override
-    public Color getColor() {
-      return Color.BLUE;
-    }
-
-    @Override
-    public String getName() {
-      return "wheat";
-    }
-  }
-
-  class Forest implements CardHandler {
-
-    @Override
-    public void handle(GameState.PlayerState player, List<GameState.PlayerState> opponents, int count) {
-      add(player, 1 * count);
-    }
-
-    @Override
-    public List<Integer> getNumbers() {
-      return List.of(5);
-    }
-
-    @Override
-    public int getPrice() {
-      return 3;
-    }
-
-    @Override
-    public Color getColor() {
-      return Color.BLUE;
-    }
-
-    @Override
-    public String getName() {
-      return "forest";
-    }
+  static CardHandler simpleGreen(String name, int price, int income, List<Integer> numbers) {
+    return new CardHandler() {
+      @Override public Color getColor() { return Color.GREEN; }
+      @Override public String getName() { return name; }
+      @Override
+      public void handle(GameState.PlayerState player, List<GameState.PlayerState> opponents, int count) {
+        add(player, income * count);
+      }
+      @Override public List<Integer> getNumbers() { return numbers; }
+      @Override public int getPrice() { return price;}
+    };
   }
 }

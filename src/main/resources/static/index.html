@@ -111,7 +111,13 @@
                     <button v-on:click="diceRoll()" type="button"> Dice </button>
                 </div>
                 <div v-if="activePlayer == username && gamePhase == 'BUILD'">
-                    <button v-on:click="buyCard('forest')" type="button"> Forest </button>
+
+                    <div>
+                        <button v-for="card in cards" v-on:click="buyCard(card.name)" type="button">
+                            {{ card.name }}
+                        </button>
+                    </div>
+
                     <button v-on:click="skipBuild()" type="button"> Skip </button>
                 </div>
             </div>

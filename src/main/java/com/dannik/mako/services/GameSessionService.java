@@ -25,8 +25,13 @@ public class GameSessionService {
   private final UserNotifier notifier;
 
   private Map<String, GameState> sessions = new HashMap<>();
-  private Map<String, CardHandler> cardHandlers = Stream.of(new CardHandler.Bakery(), new CardHandler.Wheat(),
-          new CardHandler.Forest())
+  private Map<String, CardHandler> cardHandlers = Stream.of(
+          CardHandler.simpleGreen("Bakery", 1, 1, List.of(2, 3)),
+          CardHandler.simpleBlue("Wheat", 1, 1, List.of(1)),
+          CardHandler.simpleBlue("Farm", 1, 1, List.of(2)),
+          CardHandler.simpleBlue("Flowers", 2, 1, List.of(4)),
+          CardHandler.simpleBlue("Forest", 3, 1, List.of(5))
+      )
       .collect(Collectors.toMap(CardHandler::getName, Function.identity()));
 
 
@@ -123,6 +128,9 @@ public class GameSessionService {
     }
 
     CardHandler cardHandler = cardHandlers.get(cardName);
+    if (cardHandler == null) {
+      log.error("Unable to find card {}", cardName);
+    }
 
     if (cardHandler.getPrice() <= activePlayer.getMoney()) {
       if (activePlayer.getCards().containsKey(cardName)) {
@@ -150,6 +158,7 @@ public class GameSessionService {
   public void init(Game game) {
     GameState state = GameState.init(game);
     sessions.put(game.getId(), state);
+    notifier.notifyCards(game.getId(), cardHandlers.values());
     notifier.notifyGameState(state);
   }
 }

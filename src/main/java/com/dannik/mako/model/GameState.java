@@ -44,8 +44,8 @@ public class GameState {
     public PlayerState(User user) {
       this.user = user;
       this.money = 3;
-      cards.put("bakery", 1);
-      cards.put("wheat", 1);
+      cards.put("Bakery", 1);
+      cards.put("Wheat", 1);
     }
 
   }
