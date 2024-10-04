@@ -23,7 +23,9 @@ public class BotService {
   @PostConstruct
   public void init() {
     bots.put("MrBlue", new BotHandler.MrBlue());
+    bots.put("MrBox", new BotHandler.MrBox());
     userRepository.create("MrBlue", true);
+    userRepository.create("MrBox", true);
   }
 
   public void notifyBots(GameStateResponse gameState, String gameId) {

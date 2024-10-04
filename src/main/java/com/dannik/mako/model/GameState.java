@@ -3,10 +3,7 @@ package com.dannik.mako.model;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Data
 public class GameState {
@@ -40,11 +37,12 @@ public class GameState {
     private int money;
     private Map<String, Integer> cards = new HashMap<>();
     private List<MoneyChange> lastMoneyChange = new ArrayList<>();
+    private String lastBoughtCard;
 
     public PlayerState(User user) {
       this.user = user;
       this.money = 3;
-      cards.put("Bakery", 1);
+      cards.put("Пекарня", 1);
       cards.put("Wheat", 1);
     }
 

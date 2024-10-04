@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Hello WebSocket</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <link href="main.css" rel="stylesheet">
@@ -97,35 +98,63 @@
             <div class="opponents-panel">
                 <div v-for="opponent in opponents" :key="name" >
                     <b>{{ opponent.name }}</b> money: {{ opponent.money }}
-                    <p>
+
                     <div v-for="(count, card) in opponent.cards" :key="card" style="display:inline;padding:2px;">
-                        {{ card }} <span v-if="count > 0">(x{{ count }})</span>,
+                        <span v-if="isLastBoughtCard(opponent.name, card)"><b>{{ card }}</b></span>
+                        <span v-else>{{ card }}</span>
+                        <span v-if="count > 1">(x{{ count }})</span>
                     </div>
-                    </p>
+
 
                 </div>
             </div>
             <div class="action-panel">
                 <div>Active player: {{ activePlayer }}</div>
                 <div v-if="activePlayer == username && gamePhase == 'DICE'">
-                    <button v-on:click="diceRoll()" type="button"> Dice </button>
+                    <div>
+                        Бросайте кубик
+                    </div>
+                    <button v-on:click="diceRoll(1)" type="button"> Бросить один кубик </button>
+                    <button v-if="twoDices" v-on:click="diceRoll(2)" type="button"> Бросить два кубика </button>
+
+                </div>
+                <div v-if="activePlayer != username && gamePhase == 'DICE'">
+                    <div>
+                        {{ activePlayer }} бросает кубик
+                    </div>
                 </div>
                 <div v-if="activePlayer == username && gamePhase == 'BUILD'">
-
+                    <div>
+                        У вас выпало {{ lastDice }}
+                    </div>
                     <div>
                         <button v-for="card in cards" v-on:click="buyCard(card.name)" type="button">
                             {{ card.name }}
                         </button>
                     </div>
 
-                    <button v-on:click="skipBuild()" type="button"> Skip </button>
+                    <button v-on:click="skipBuild()" type="button"> Пропуск </button>
+                </div>
+                <div v-if="activePlayer != username && gamePhase == 'BUILD'">
+                    <div>
+                        Выпало {{ lastDice }}
+                    </div>
+                    <div>
+                        {{ activePlayer }} выбирает карту
+                    </div>
+
                 </div>
             </div>
         </div>
 
 
+        <div>
+            money: {{ playerState.money }}
+        </div>
 
-        money: {{ playerState.money }}
+        <div v-for="(count, card) in playerState.cards" :key="card" style="padding:2px;">
+            {{ card }} <span v-if="count > 1">(x{{ count }})</span> {{ calculateLastChange(card) }}
+        </div>
 
     </div>
 </div>

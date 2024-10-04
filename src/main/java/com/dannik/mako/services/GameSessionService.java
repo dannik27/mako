@@ -25,23 +25,40 @@ public class GameSessionService {
   private final UserNotifier notifier;
 
   private Map<String, GameState> sessions = new HashMap<>();
-  private Map<String, CardHandler> cardHandlers = Stream.of(
-          CardHandler.simpleGreen("Bakery", 1, 1, List.of(2, 3)),
-          CardHandler.simpleBlue("Wheat", 1, 1, List.of(1)),
-          CardHandler.simpleBlue("Farm", 1, 1, List.of(2)),
-          CardHandler.simpleBlue("Flowers", 2, 1, List.of(4)),
-          CardHandler.simpleBlue("Forest", 3, 1, List.of(5))
-      )
-      .collect(Collectors.toMap(CardHandler::getName, Function.identity()));
+  private Map<String, CardHandler> cardHandlers = new HashMap<>();
 
+  {
+    Stream.of(
+            CardHandler.simpleGreen("Пекарня", CardHandler.Type.BOX, 1, 1, List.of(2, 3)),
+            CardHandler.simpleGreen("Магазин", CardHandler.Type.BOX, 2, 3, List.of(4)),
+
+            CardHandler.complexGreen("Мебельная фабрика", CardHandler.Type.GEAR, cardHandlers, 3, 3, List.of(8)),
+
+            CardHandler.simpleBlue("Wheat", CardHandler.Type.WHEAT, 1, 1, List.of(1)),
+            CardHandler.simpleBlue("Farm", CardHandler.Type.PIG, 1, 1, List.of(2)),
+            CardHandler.simpleBlue("Flowers", CardHandler.Type.WHEAT, 2, 1, List.of(4)),
+            CardHandler.simpleBlue("Forest", CardHandler.Type.GEAR, 3, 1, List.of(5)),
+
+            CardHandler.stadium(),
+
+            CardHandler.yellow("Port", 2),
+            CardHandler.yellow("Вокзал", 4),
+            CardHandler.yellow("Shopping mall", 10),
+            CardHandler.yellow("Theme park", 16),
+            CardHandler.yellow("Radio tower", 22),
+            CardHandler.yellow("Airport", 30)
+        )
+        .forEach(card -> cardHandlers.put(card.getName(), card));
+  }
 
 
   public void requestState(String gameId) {
     log.info("User reconnected to game {}", gameId);
+    notifier.notifyCards(gameId, cardHandlers.values());
     notifier.notifyGameState(sessions.get(gameId));
   }
 
-  public void diceRoll(String gameId, String username) {
+  public void diceRoll(String gameId, String username, int diceCount) {
     GameState state = sessions.get(gameId);
     if (state.getPhase() != GameState.GamePhase.DICE) {
       log.error("Wrong phase");
@@ -55,6 +72,9 @@ public class GameSessionService {
     }
 
     int dice = new SecureRandom().nextInt(1, 7);
+    if (diceCount == 2) {
+      dice += new SecureRandom().nextInt(1, 7);
+    }
     state.setLastDice(dice);
 
 
@@ -70,6 +90,7 @@ public class GameSessionService {
         opponentsBefore.add(state.getPlayers().get(i));
       }
 
+      int finalDice = dice;
       player.getCards().forEach((cardName, count) -> {
         CardHandler cardHandler = cardHandlers.get(cardName);
 
@@ -77,7 +98,7 @@ public class GameSessionService {
             (cardHandler.getColor() == CardHandler.Color.BLUE) ||
             (cardHandler.getColor() == CardHandler.Color.RED && activePlayer != player) ||
             (cardHandler.getColor() == CardHandler.Color.PURPLE && activePlayer == player))
-              && cardHandler.getNumbers().contains(dice)) {
+              && cardHandler.getNumbers().contains(finalDice)) {
           cardHandler.handle(player, opponentsBefore, count);
         }
 
@@ -103,6 +124,8 @@ public class GameSessionService {
       log.error("It is not your turn: {} != {}", activePlayer.getUser().getUsername(), username);
       return;
     }
+
+    activePlayer.setLastBoughtCard(null);
 
     if (state.getActivePlayer() < state.getPlayers().size() - 1) {
       state.setActivePlayer(state.getActivePlayer() + 1);
@@ -138,6 +161,7 @@ public class GameSessionService {
       } else {
         activePlayer.getCards().put(cardName, 1);
       }
+      activePlayer.setLastBoughtCard(cardName);
       activePlayer.setMoney(activePlayer.getMoney() - cardHandler.getPrice());
     } else {
       //TODO: no money

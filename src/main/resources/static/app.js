@@ -30,6 +30,8 @@ createApp({
     const opponents = ref({})
     const activePlayer = ref('')
     const gamePhase = ref('')
+    const lastDice = ref('')
+    const twoDices = ref(false)
 
     const cards = ref('')
 
@@ -50,6 +52,8 @@ createApp({
 
         activePlayer.value = newState.activePlayer
         gamePhase.value = newState.phase
+        lastDice.value = newState.lastDice
+        twoDices.value = newState.twoDices
 
 //        .filter(player => player.name != username.value)
     }
@@ -212,10 +216,10 @@ createApp({
     }
 
 
-    const diceRoll = () => {
+    const diceRoll = (count) => {
         stompClient.publish({
             destination: `/app/session/${currentGame.value.id}/dice`,
-            body: "{}",
+            body: JSON.stringify({ count: count}),
             headers: { username: username.value }
         });
     }
@@ -236,6 +240,15 @@ createApp({
         });
     }
 
+    const calculateLastChange = (cardName) => {
+      let change = playerState.value.lastMoneyChange.find(c => c.card == cardName)
+      return change?.count
+    }
+
+    const isLastBoughtCard = (playerName, cardName) => {
+      let player = opponents.value.find(o => o.name == playerName)
+      return cardName == player?.lastBoughtCard
+    }
 
 
     const message = ref('Hello vue!')
@@ -265,6 +278,10 @@ createApp({
       activePlayer,
       gamePhase,
       cards,
+      lastDice,
+      twoDices,
+      calculateLastChange,
+      isLastBoughtCard,
 
       diceRoll,
       buyCard,

@@ -30,12 +30,14 @@ public class GameSessionController {
     sessionService.requestState(gameId);
   }
 
+  record DiceRoll(int count) {}
+
   @MessageMapping("/session/{gameId}/dice")
-  public void diceRoll(@Payload HelloMessage message,
+  public void diceRoll(@Payload DiceRoll message,
                            @Header("username") String username,
                            @DestinationVariable("gameId") String gameId) throws Exception {
 
-    sessionService.diceRoll(gameId, username);
+    sessionService.diceRoll(gameId, username, message.count());
   }
 
   @MessageMapping("/session/{gameId}/buy")
