@@ -18,8 +18,15 @@ public class GameStateResponse {
   private final String phase;
   private final int lastDice;
   private final String lastBuilding;
+  private final String winner;
+  private final int turn;
+  private final String requiredConfirmation;
 
   public static GameStateResponse of(GameState state) {
+    return of(state, null);
+  }
+
+  public static GameStateResponse of(GameState state, String winner) {
     boolean twoDices = state.getPlayers().get(state.getActivePlayer()).getCards().containsKey("Вокзал");
 
     return new GameStateResponse(state.getPlayers().get(state.getActivePlayer()).getUser().getUsername(),
@@ -27,7 +34,7 @@ public class GameStateResponse {
         state.getPlayers().stream().map(PlayerStateDto::of).toList(),
         state.getPhase().name(),
         state.getLastDice(),
-        state.getLastBuilding());
+        state.getLastBuilding(), winner, state.getTurn(), state.getRequiredConfirmation());
   }
 
   @Data

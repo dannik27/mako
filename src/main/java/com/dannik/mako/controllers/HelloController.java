@@ -72,7 +72,7 @@ public class HelloController {
   @SendToUser("/topic/games")
   public ListGamesResponse listGames(@Payload ListGamesRequest request,
                                      @Header("username") String username) throws Exception {
-    return ListGamesResponse.of(gameService.getGames());
+    return ListGamesResponse.of(gameService.getActiveGames());
   }
 
   @MessageMapping("/game/{gameId}/join")

@@ -1,6 +1,7 @@
 package com.dannik.mako.repositories;
 
 import com.dannik.mako.model.Game;
+import com.dannik.mako.model.GameStatus;
 import com.dannik.mako.model.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -20,7 +21,9 @@ public class GameRepository {
   }
 
   public Optional<Game> findActiveGameByUser(User user) {
-    return games.values().stream().filter(game -> game.getPlayers().contains(user)).findFirst();
+    return games.values().stream()
+            .filter(game -> game.getPlayers().contains(user) && game.getStatus() != GameStatus.COMPLETED)
+            .findFirst();
   }
 
   public Optional<Game> findGameById(String gameId) {

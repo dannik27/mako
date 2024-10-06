@@ -110,6 +110,33 @@
             </div>
             <div class="action-panel">
                 <div>Active player: {{ activePlayer }}</div>
+                <div v-if="gamePhase == 'WINNER'">
+                    Победил {{ winner }}
+                    <button v-on:click="reset()" type="button"> Вернуться в меню</button>
+                </div>
+                <div v-if="activePlayer == username && gamePhase == 'CHOICE'">
+                    <div>
+                        У вас выпало {{ lastDice }}
+                    </div>
+                    <div v-if="requiredConfirmation == 'Порт'">
+                        Вы можете добавить к кубику
+                        <button v-on:click="confirm('Порт', {addition: 2})" type="button"> Добавить 2 </button>
+                        <button v-on:click="confirm('Порт', {addition: 1})" type="button"> Добавить 1 </button>
+                        <button v-on:click="confirm('Порт', {addition: 0})" type="button"> Не добавлять </button>
+                    </div>
+                    <div v-if="requiredConfirmation == 'Радиовышка'">
+                        Вы можете перебросить кубики
+                        <button v-on:click="confirm('Радиовышка', {diceCount: 2})" type="button"> Бросить 2 </button>
+                        <button v-on:click="confirm('Радиовышка', {diceCount: 1})" type="button"> Бросить 1 </button>
+                        <button v-on:click="confirm('Радиовышка', {diceCount: 0})" type="button"> Оставить </button>
+                    </div>
+                    <div v-if="requiredConfirmation == 'Телецентр'">
+                        Телецентр! Выберите у кого забрать 5 монет
+                        <button v-for="op in opponents" v-on:click="confirm('Телецентр', {opponent: op.name})" type="button"> {{ op.name }} </button>
+                    </div>
+
+
+                </div>
                 <div v-if="activePlayer == username && gamePhase == 'DICE'">
                     <div>
                         Бросайте кубик
@@ -128,9 +155,44 @@
                         У вас выпало {{ lastDice }}
                     </div>
                     <div>
-                        <button v-for="card in cards" v-on:click="buyCard(card.name)" type="button">
-                            {{ card.name }}
-                        </button>
+                        <div>
+                            <template v-for="card in cardsByColor('GREEN')">
+                                <button v-if="card.price >= 0" :disabled="!canBuyCard(card.name)"  v-on:click="buyCard(card.name)" type="button">
+                                    {{ card.name }} {{ cardsLeftCount(card.name) }}
+                                </button>
+                            </template>
+                        </div>
+                        <div>
+                            <template v-for="card in cardsByColor('BLUE')">
+                                <button v-if="card.price >= 0" :disabled="!canBuyCard(card.name)"  v-on:click="buyCard(card.name)" type="button">
+                                    {{ card.name }} {{ cardsLeftCount(card.name) }}
+                                </button>
+                            </template>
+                        </div>
+                        <div>
+                            <template v-for="card in cardsByColor('RED')">
+                                <button v-if="card.price >= 0" :disabled="!canBuyCard(card.name)"  v-on:click="buyCard(card.name)" type="button">
+                                    {{ card.name }} {{ cardsLeftCount(card.name) }}
+                                </button>
+                            </template>
+                        </div>
+                        <div>
+                            <template v-for="card in cardsByColor('PURPLE')">
+                                <button v-if="card.price >= 0" :disabled="!canBuyCard(card.name)"  v-on:click="buyCard(card.name)" type="button">
+                                    {{ card.name }} {{ cardsLeftCount(card.name) }}
+                                </button>
+                            </template>
+                        </div>
+                        <div>
+                            <template v-for="card in cardsByColor('YELLOW')">
+                                <button v-if="card.price >= 0" :disabled="!canBuyCard(card.name)"  v-on:click="buyCard(card.name)" type="button">
+                                    {{ card.name }} {{ cardsLeftCount(card.name) }}
+                                </button>
+                            </template>
+                        </div>
+
+
+
                     </div>
 
                     <button v-on:click="skipBuild()" type="button"> Пропуск </button>

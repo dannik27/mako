@@ -82,6 +82,12 @@ public class GameService {
     }).orElse(null);
   }
 
+  public void endGame(String gameId, User winner) {
+    Game game = gameRepository.findGameById(gameId).orElseThrow();
+    game.setWinner(winner.getUsername());
+    game.setStatus(GameStatus.COMPLETED);
+  }
+
   public Game leaveGame(String gameId, String username) {
     User user = userRepository.getOrCreate(username);
 
@@ -100,6 +106,10 @@ public class GameService {
 
   public List<Game> getGames() {
     return gameRepository.findAll();
+  }
+
+  public List<Game> getActiveGames() {
+    return gameRepository.findAll().stream().filter(game -> game.getStatus() != GameStatus.COMPLETED).toList();
   }
 
   public Optional<Game> getGame(String gameId) {

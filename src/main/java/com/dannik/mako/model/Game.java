@@ -13,6 +13,7 @@ public class Game {
   private List<User> players;
   private User author;
   private GameStatus status;
+  private String winner;
 
   public Game() {}
 

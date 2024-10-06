@@ -40,11 +40,19 @@ public class UserNotifier {
     botService.notifyBots(response, gameId);
   }
 
-  record CardInfo(String name, String color, int price, List<Integer> numbers) {}
+  public void notifyWinner(GameState state, String winner) {
+    String gameId = state.getGame().getId();
+    log.info("Notify game winner: {}", gameId);
+    GameStateResponse response = GameStateResponse.of(state, winner);
+    messagingTemplate.convertAndSend("/topic/game/%s/state".formatted(gameId), response);
+    botService.notifyBots(response, gameId);
+  }
+
+  record CardInfo(String name, String color, int price, List<Integer> numbers, boolean startCard) {}
 
   public void notifyCards(String gameId, Collection<CardHandler> cards) {
     List<CardInfo> cardInfo = cards.stream()
-        .map(c -> new CardInfo(c.getName(), c.getColor().name(), c.getPrice(), c.getNumbers())).toList();
+        .map(c -> new CardInfo(c.getName(), c.getColor().name(), c.getPrice(), c.getNumbers(), c.isStartCard())).toList();
 
     messagingTemplate.convertAndSend("/topic/game/%s/cards".formatted(gameId), cardInfo);
   }

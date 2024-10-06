@@ -13,6 +13,7 @@ import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.util.HtmlUtils;
 
+import java.util.Map;
 import java.util.Optional;
 
 @Controller
@@ -54,6 +55,16 @@ public class GameSessionController {
                       @DestinationVariable("gameId") String gameId) throws Exception {
 
     sessionService.skipBuild(gameId, username);
+  }
+
+
+
+  @MessageMapping("/session/{gameId}/confirm")
+  public void confirm(@Payload Map<String, Object> message,
+                        @Header("username") String username,
+                        @DestinationVariable("gameId") String gameId) throws Exception {
+
+    sessionService.confirm(gameId, username, message);
   }
 
 

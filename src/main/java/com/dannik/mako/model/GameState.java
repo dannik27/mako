@@ -15,6 +15,11 @@ public class GameState {
   private GamePhase phase;
   private int lastDice;
   private String lastBuilding;
+  private int turn = 1;
+  private boolean wasDouble = false;
+
+  private Map<String, Map<String, Object>> confirmations = new HashMap<>();
+  private String requiredConfirmation;
 
   public static GameState init(Game game) {
     GameState state = new GameState();
@@ -27,7 +32,8 @@ public class GameState {
   public enum GamePhase {
     DICE,
     CHOICE,
-    BUILD
+    BUILD,
+    WINNER
   }
 
   @Data
@@ -42,8 +48,9 @@ public class GameState {
     public PlayerState(User user) {
       this.user = user;
       this.money = 3;
+      cards.put("Ратуша", 1);
       cards.put("Пекарня", 1);
-      cards.put("Wheat", 1);
+      cards.put("Пшеничное поле", 1);
     }
 
   }
