@@ -38,7 +38,7 @@ public interface CardHandler {
   }
 
   static boolean mall(GameState.PlayerState player) {
-    return player.getCards().containsKey("Торговый центр");
+    return player.hasCard("Торговый центр");
   }
 
   List<Integer> getNumbers();
@@ -87,20 +87,18 @@ public interface CardHandler {
     add("Телецентр", ADMIN, player, removed);
   };
 
-  static HandlerFunction publishing(Map<String, CardHandler> cards) {
-    return (player, opponents, confirmations, count) -> {
-      int sum = 0;
-      for (GameState.PlayerState opponent : opponents) {
-        int cardsCount = opponent.getCards().entrySet().stream()
-            .filter(e -> cards.get(e.getKey()).getType() == CUP || cards.get(e.getKey()).getType() == BOX)
-            .mapToInt(Map.Entry::getValue).sum();
-        sum += remove("Издательство", opponent, cardsCount, player);
-      }
-      if (sum > 0) {
-        add("Издательство", ADMIN, player, sum);
-      }
-    };
-  }
+  HandlerFunction publishing = (player, opponents, confirmations, count) -> {
+    int sum = 0;
+    for (GameState.PlayerState opponent : opponents) {
+      int cardsCount = opponent.getCards().stream()
+          .filter(c -> c.getHandler().getType() == CUP || c.getHandler().getType() == BOX)
+          .mapToInt(GameState.CardState::getCount).sum();
+      sum += remove("Издательство", opponent, cardsCount, player);
+    }
+    if (sum > 0) {
+      add("Издательство", ADMIN, player, sum);
+    }
+  };
 
   class Builder {
 
@@ -146,15 +144,15 @@ public interface CardHandler {
       return this;
     }
 
-    public Builder complexGreen(List<Integer> numbers, int income, Map<String, CardHandler> cards, Function<CardHandler, Boolean> checkCard) {
+    public Builder complexGreen(List<Integer> numbers, int income, Function<CardHandler, Boolean> checkCard) {
       this.color = Color.GREEN;
       this.income = income;
       this.numbers = numbers;
       this.handlerFunction = ((player, opponents, confirmations, count) -> {
         final int[] relatedCards = {0};
-        player.getCards().forEach((card, cardsCount) -> {
-          if (checkCard.apply(cards.get(card))) {
-            relatedCards[0] += cardsCount;
+        player.getCards().forEach((card) -> {
+          if (checkCard.apply(card.getHandler())) {
+            relatedCards[0] += card.getCount();
           }
         });
         add(name, type, player, income * relatedCards[0] * count);
@@ -162,21 +160,21 @@ public interface CardHandler {
       return this;
     }
 
-    public Builder forEveryCard(List<Integer> numbers, int income, Map<String, CardHandler> cards, Function<CardHandler, Boolean> checkCard) {
+    public Builder forEveryCard(List<Integer> numbers, int income, Function<CardHandler, Boolean> checkCard) {
       this.color = Color.GREEN;
       this.income = income;
       this.numbers = numbers;
       this.handlerFunction = ((player, opponents, confirmations, count) -> {
         AtomicInteger cupsCount = new AtomicInteger();
-        player.getCards().forEach((card, cardsCount) -> {
-          if (checkCard.apply(cards.get(card))) {
-            cupsCount.addAndGet(cardsCount);
+        player.getCards().forEach((card) -> {
+          if (checkCard.apply(card.getHandler())) {
+            cupsCount.addAndGet(card.getCount());
           }
         });
         opponents.forEach(op -> {
-          op.getCards().forEach((card, cardsCount) -> {
-            if (checkCard.apply(cards.get(card))) {
-              cupsCount.addAndGet(cardsCount);
+          op.getCards().forEach((card) -> {
+            if (checkCard.apply(card.getHandler())) {
+              cupsCount.addAndGet(card.getCount());
             }
           });
         });

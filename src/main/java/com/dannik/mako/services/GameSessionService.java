@@ -50,19 +50,19 @@ public class GameSessionService {
             // 4 demontaj
 
             CardHandler.Builder.create("Цветочный магазин", CardHandler.Type.BOX, 1)
-                .complexGreen(List.of(6), 1, cardHandlers, c -> c.getName().equals("Цветник")).build(),
+                .complexGreen(List.of(6), 1, c -> c.getName().equals("Цветник")).build(),
             CardHandler.Builder.create("Сыроварня", CardHandler.Type.FACTORY, 5)
-                .complexGreen(List.of(7), 3, cardHandlers, c -> c.getType() == CardHandler.Type.PIG).build(),
+                .complexGreen(List.of(7), 3, c -> c.getType() == CardHandler.Type.PIG).build(),
             CardHandler.Builder.create("Мебельная фабрика", CardHandler.Type.FACTORY, 3)
-                .complexGreen(List.of(8), 3, cardHandlers, c -> c.getType() == CardHandler.Type.GEAR).build(),
+                .complexGreen(List.of(8), 3, c -> c.getType() == CardHandler.Type.GEAR).build(),
             // vinni zavod
           // 9-10 transport company
             CardHandler.Builder.create("Завод напитков", CardHandler.Type.FACTORY, 5)
-                .forEveryCard(List.of(11), 1, cardHandlers, c -> c.getType() == CardHandler.Type.CUP).build(),
+                .forEveryCard(List.of(11), 1, c -> c.getType() == CardHandler.Type.CUP).build(),
             CardHandler.Builder.create("Фруктовый рынок", CardHandler.Type.FRUIT, 2)
-                .complexGreen(List.of(11, 12), 2, cardHandlers, c -> c.getType() == CardHandler.Type.WHEAT).build(),
+                .complexGreen(List.of(11, 12), 2, c -> c.getType() == CardHandler.Type.WHEAT).build(),
             CardHandler.Builder.create("Склад продовольствия", CardHandler.Type.FACTORY, 2)
-                .complexGreen(List.of(12, 13), 2, cardHandlers, c -> c.getType() == CardHandler.Type.CUP).build(),
+                .complexGreen(List.of(12, 13), 2, c -> c.getType() == CardHandler.Type.CUP).build(),
 
 
             CardHandler.Builder.create("Пшеничное поле", CardHandler.Type.WHEAT, 1)
@@ -94,7 +94,7 @@ public class GameSessionService {
                 .purple(List.of(6), CardHandler.tvCenter).build(),
             // Деловой центр
             CardHandler.Builder.create("Издательство", CardHandler.Type.ADMIN, 5)
-                .purple(List.of(7), CardHandler.publishing(cardHandlers)).build(),
+                .purple(List.of(7), CardHandler.publishing).build(),
             // 8 Клининговая компания
             // 8-9 Налоговая инспекция
             // 10 Венчурный фонд
@@ -190,10 +190,10 @@ public class GameSessionService {
   }
 
   public void calculateIncomes(GameState state, GameState.PlayerState activePlayer) {
-    for (String cardName : activePlayer.getCards().keySet()) {
-      CardHandler card = cardHandlers.get(cardName);
-      if (card.isConfirmationRequired(state.getLastDice()) && !state.getConfirmations().containsKey(cardName)) {
-        state.setRequiredConfirmation(cardName);
+    for (GameState.CardState card : activePlayer.getCards()) {
+
+      if (card.getHandler().isConfirmationRequired(state.getLastDice()) && !state.getConfirmations().containsKey(card.getName())) {
+        state.setRequiredConfirmation(card.getName());
         state.setPhase(GameState.GamePhase.CHOICE);
         notifier.notifyGameState(state);
         return;
@@ -213,21 +213,21 @@ public class GameSessionService {
       }
 
       int dice = state.getLastDice();
-      player.getCards().forEach((cardName, count) -> {
-        CardHandler cardHandler = cardHandlers.get(cardName);
+      player.getCards().forEach((cardState) -> {
+        CardHandler cardHandler = cardState.getHandler();
 
         if (((cardHandler.getColor() == GREEN && activePlayer == player) ||
             (cardHandler.getColor() == BLUE) ||
             (cardHandler.getColor() == CardHandler.Color.RED && activePlayer != player) ||
             (cardHandler.getColor() == PURPLE && activePlayer == player))
             && cardHandler.getNumbers().contains(dice)) {
-          cardHandler.handle(player, opponentsBefore, state.getConfirmations(), count);
+          cardHandler.handle(player, opponentsBefore, state.getConfirmations(), cardState.getCount());
         }
 
       });
     }
 
-    if (activePlayer.getCards().containsKey("Ратуша") && activePlayer.getMoney() == 0) {
+    if (activePlayer.hasCard("Ратуша") && activePlayer.getMoney() == 0) {
       activePlayer.setMoney(1);
     }
 
@@ -251,11 +251,11 @@ public class GameSessionService {
 
     activePlayer.setLastBoughtCard(null);
 
-    if (activePlayer.getCards().containsKey("Аэропорт")) {
+    if (activePlayer.hasCard("Аэропорт")) {
       activePlayer.setMoney(activePlayer.getMoney() + 10);
     }
 
-    if (!activePlayer.getCards().containsKey("Парк развлечений") || !state.isWasDouble()) {
+    if (!activePlayer.hasCard("Парк развлечений") || !state.isWasDouble()) {
       if (state.getActivePlayer() < state.getPlayers().size() - 1) {
         state.setActivePlayer(state.getActivePlayer() + 1);
       } else {
@@ -288,11 +288,7 @@ public class GameSessionService {
     }
 
     if (cardHandler.getPrice() <= activePlayer.getMoney()) {
-      if (activePlayer.getCards().containsKey(cardName)) {
-        activePlayer.getCards().put(cardName, activePlayer.getCards().get(cardName) + 1);
-      } else {
-        activePlayer.getCards().put(cardName, 1);
-      }
+      activePlayer.addCard(cardHandler);
       activePlayer.setLastBoughtCard(cardName);
       activePlayer.setMoney(activePlayer.getMoney() - cardHandler.getPrice());
     } else {
@@ -301,7 +297,7 @@ public class GameSessionService {
       return;
     }
 
-    long yellowBought = activePlayer.getCards().keySet().stream().map(cardHandlers::get)
+    long yellowBought = activePlayer.getCards().stream().map(GameState.CardState::getHandler)
         .filter(h -> h.getColor() == CardHandler.Color.YELLOW).count();
     long yellowNeeded = cardHandlers.values().stream().filter(h -> h.getColor() == CardHandler.Color.YELLOW).count();
 
@@ -311,7 +307,7 @@ public class GameSessionService {
       notifier.notifyWinner(state, username);
 
     } else {
-      if (!activePlayer.getCards().containsKey("Парк развлечений") || !state.isWasDouble()) {
+      if (!activePlayer.hasCard("Парк развлечений") || !state.isWasDouble()) {
         if (state.getActivePlayer() < state.getPlayers().size() - 1) {
           state.setActivePlayer(state.getActivePlayer() + 1);
         } else {
@@ -343,13 +339,13 @@ public class GameSessionService {
         return new CardAndCount(card, 0);
 
       } else if (card.getColor() == PURPLE || card.getColor() == CardHandler.Color.YELLOW) {
-        int count = player.getCards().containsKey(card.getName())
+        int count = player.hasCard(card.getName())
             ? 0
             : 1;
         return new CardAndCount(card, count);
       } else {
         int occupied = state.getPlayers().stream()
-            .mapToInt(p -> p.getCards().getOrDefault(card.getName(), 0)).sum();
+            .mapToInt(p -> p.getCardsCount(card.getName())).sum();
 
         int count = card.isStartCard()
             ? 6 - (occupied - state.getPlayers().size())
@@ -360,7 +356,7 @@ public class GameSessionService {
   }
 
   public void init(Game game) {
-    GameState state = GameState.init(game);
+    GameState state = GameState.init(game, cardHandlers.values().stream().filter(CardHandler::isStartCard).toList());
     sessions.put(game.getId(), state);
     notifier.notifyCards(game.getId(), cardHandlers.values());
     notifier.notifyGameState(state);
