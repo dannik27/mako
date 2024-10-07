@@ -1,12 +1,16 @@
 body {
-    background-color: #f5f5f5;
+    background: rgb(86,78,230);
+    background: linear-gradient(180deg, rgba(86,78,230,0.2274159663865546) 3%, rgba(255,255,255,1) 50%, rgba(111,157,49,0.20220588235294112) 97%);
+    min-height: 100%;
+    height: 100%;
+}
+
+html{
+  height: 100%;
 }
 
 
 .container {
-    max-width: 940px;
-    padding: 2em 3em;
-    margin: 0 auto 20px;
     background-color: #fff;
     border: 1px solid #e5e5e5;
     -webkit-border-radius: 5px;
@@ -23,3 +27,150 @@ body {
 .opponents-panel > div {
     border: solid 1px black;
 }
+
+.shop-group {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-auto-rows: 1fr;
+    gap: 3px;
+}
+
+.bought-cards-wrapper {
+  height: 25vh;
+  max-height: 25vh;
+  border: black 1px solid;
+  border-radius: 5px;
+  overflow-y:auto;
+}
+
+.bought-cards {
+  display: grid;
+  gap: 1px;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: auto;
+
+}
+
+.bought-card {
+  border: black 1px solid;
+  border-radius: 2px;
+  padding: 0 2px 0 2px;
+}
+
+#app {
+  min-height: 100%;
+}
+
+.game-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.action-panel {
+  flex-grow: 1;
+}
+
+.shop-group > div {
+    display: grid;
+    grid-template-areas:
+      "numbers price"
+      "name name"
+      "count count";
+    grid-template-columns: 3fr 2fr;
+    grid-template-rows: auto auto auto;
+    border-radius: 10px;
+    outline: black 1px solid;
+}
+
+@media (min-width: 500px) {
+  .shop-group > div {
+    width: 120px;
+  }
+  .card-price {
+    padding-right: 10px;
+    font-size: 10px;
+  }
+  .card-numbers {
+    padding-left: 10px;
+    font-size: 16px;
+  }
+  .card-name {
+    font: italic bold 100% cursive;
+  }
+  .price-circle {
+    border-radius:10px;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+  }
+}
+
+@media (max-width: 500px) {
+  .shop-group > div {
+    font-size: 6px;
+  }
+  .card-price {
+    padding-right: 1px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .card-numbers {
+    padding-left: 2px;
+    font-size: 8px;
+  }
+  .card-name {
+    font: italic bold 150% cursive;
+  }
+  .price-circle {
+    border-radius:8px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+  }
+  .bought-card {
+    font: italic bold 10px cursive;
+  }
+}
+
+.card-numbers {
+  grid-area: numbers;
+  padding-top: 2px;
+  color: white;
+  text-shadow: 1px 1px 1px black;
+}
+
+.card-price {
+  grid-area: price;
+  justify-self: end;
+  padding-top: 1px;
+}
+
+.price-circle {
+  background-color:#FFD700;
+  outline: 2px #B8860B solid;
+  text-align:center;
+  vertical-align:middle;
+}
+
+.card-name {
+  text-align: center;
+  overflow-wrap: anywhere;
+  grid-area: name;
+}
+
+.card-count {
+  text-align: right;
+  grid-area: count;
+  padding-right: 10px;
+}
+
+.active-card:hover {
+  outline: 2px #FFD700 solid;
+}
+
+.active-card:active {
+  outline: 2px #FFD700 solid;
+}
+
+

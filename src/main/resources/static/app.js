@@ -70,6 +70,10 @@ createApp({
       });
     }
 
+    const onEventReceived = (message) => {
+      console.log("Event: " + message['body'])
+    }
+
     const onWsConnect = (frame) => {
       console.log('Connected: ' + frame);
 
@@ -81,6 +85,7 @@ createApp({
             console.log("Game already started");
             stompClient.subscribe(`/topic/game/${currentGame.value.id}/state`, onGameStateReceived);
             stompClient.subscribe(`/topic/game/${currentGame.value.id}/cards`, onCardsReceived);
+            stompClient.subscribe(`/topic/game/${currentGame.value.id}/event`, onEventReceived);
 
 
 
@@ -212,10 +217,10 @@ createApp({
         stompClient.activate();
     }
 
-//    onMounted(() => {
-//      username.value = 'qwe'
-//      connect()
-//    })
+    onMounted(() => {
+      username.value = 'qwe'
+      connect()
+    })
 
 
     const disconnect = () => {
@@ -233,11 +238,13 @@ createApp({
     }
 
     const buyCard = (cardName) => {
-        stompClient.publish({
-            destination: `/app/session/${currentGame.value.id}/buy`,
-            body: JSON.stringify({ name: cardName}),
-            headers: { username: username.value }
-        });
+        if (canBuyCard(cardName)) {
+          stompClient.publish({
+              destination: `/app/session/${currentGame.value.id}/buy`,
+              body: JSON.stringify({ name: cardName}),
+              headers: { username: username.value }
+          });
+        }
     }
 
     const skipBuild = () => {
@@ -294,11 +301,17 @@ createApp({
     }
 
     const cardsByColor = (color) => {
-      return cards.value.filter(c => c.color == color).toSorted((a, b) => {
+      return cards.value.filter(c => c.color == color && cardsLeftCount(c.name) > 0).toSorted((a, b) => {
         let valueA = a.numbers ? a.numbers[0] : a.price
         let valueB = b.numbers ? b.numbers[0] : b.price
         return valueA - valueB
-        })
+        }).map(c => ({
+          name: c.name,
+          price: c.price,
+          cardsLeft: cardsLeftCount(c.name),
+          numbers: c.numbers == null ? '' : c.numbers.length == 1 ? c.numbers[0] : c.numbers[0] + '-' + c.numbers[c.numbers.length - 1],
+          canBuy: canBuyCard(c.name)
+        }))
 
     }
 
@@ -310,7 +323,37 @@ createApp({
       });
     }
 
+    const shopGroups = ref([
+      {
+        color: 'GREEN',
+        activeStyle: { 'background-color': '#90EE90' },
+        disabledStyle: { 'background-color': '#8FBC8F' }
+      },
+      {
+        color: 'BLUE',
+        activeStyle: { 'background-color': '#00BFFF' },
+        disabledStyle: { 'background-color': '#4682B4' }
+      },
+      {
+        color: 'RED',
+        activeStyle: { 'background-color': '#FF6347' },
+        disabledStyle: { 'background-color': '#800000' }
+      },
+      {
+        color: 'PURPLE',
+        activeStyle: { 'background-color': '#BA55D3' },
+        disabledStyle: { 'background-color': '#9370DB' }
+      },
+      {
+        color: 'YELLOW',
+        activeStyle: { 'background-color': '#EEE8AA' },
+        disabledStyle: { 'background-color': '#778899' }
+      }
+    ])
 
+    const boughtCards = () => {
+      Object.entries(playerState.value.cards).map(e => ({ name: e[0], count: e[1]}))
+    }
 
     const message = ref('Hello vue!')
     return {
@@ -350,6 +393,7 @@ createApp({
       winner,
       requiredConfirmation,
       confirm,
+      shopGroups,
 
       diceRoll,
       buyCard,

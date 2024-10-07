@@ -1,5 +1,7 @@
 package com.dannik.mako.model;
 
+import com.dannik.mako.services.UserNotifier;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -17,29 +19,36 @@ public interface CardHandler {
 
   String getName();
 
-  void handle(GameState.PlayerState player, List<GameState.PlayerState> opponents, Map<String, Map<String, Object>> confirmations, int count);
+  void handle(GameState.PlayerState player, GameState.PlayerState activePlayer, List<GameState.PlayerState> opponents,
+              Map<String, Map<String, Object>> confirmations, int count, Notifier notifier);
 
-  static void add(String cardName, Type cardType, GameState.PlayerState player, int count) {
-    int finalCount = mall(player) && (cardType == CUP || cardType == BOX)
-        ? count * 2
-        : count;
-    player.setMoney(player.getMoney() + finalCount);
-    player.getLastMoneyChange().add(new GameState.MoneyChange(cardName, finalCount, null));
+  static void add(String cardName, Type cardType, GameState.PlayerState player, int count, Notifier notifier) {
+    int finalCount = count;
+    if (finalCount < 0) { // bank
+      int minus = Math.min(player.getMoney(), -finalCount);
+      player.setMoney(player.getMoney() - minus);
+      player.getLastMoneyChange().add(new GameState.MoneyChange(cardName, -minus, "bank"));
+      notifier.notify("Игрок %s заплатил %d монет за карту %s".formatted(player.getUser().getUsername(), minus, cardName));
+    } else {
+      player.setMoney(player.getMoney() + finalCount);
+      player.getLastMoneyChange().add(new GameState.MoneyChange(cardName, finalCount, null));
+      notifier.notify("Игрок %s получил %d монет за карту %s".formatted(player.getUser().getUsername(), finalCount, cardName));
+    }
   }
 
-  static int remove(String cardName, GameState.PlayerState fromWhom, int count, GameState.PlayerState toWhom) {
+  static int remove(String cardName, GameState.PlayerState fromWhom, int count, GameState.PlayerState toWhom, Notifier notifier) {
     if (fromWhom.getMoney() == 0) {
       return 0;
     }
     int minus = Math.min(fromWhom.getMoney(), count);
     fromWhom.setMoney(fromWhom.getMoney() - minus);
     fromWhom.getLastMoneyChange().add(new GameState.MoneyChange(cardName, -minus, toWhom.getUser().getUsername()));
+    notifier.notify("Игрок %s заплатил %d монет игроку %s за карту %s".formatted(fromWhom.getUser().getUsername(),
+        minus, toWhom.getUser().getUsername(), cardName));
     return minus;
   }
 
-  static boolean mall(GameState.PlayerState player) {
-    return player.hasCard("Торговый центр");
-  }
+
 
   List<Integer> getNumbers();
 
@@ -51,6 +60,8 @@ public interface CardHandler {
 
   boolean isConfirmationRequired(int dice);
 
+  void doAfterBuild(GameState.PlayerState player);
+
   enum Color {
     BLUE, GREEN, RED, PURPLE, YELLOW
   }
@@ -60,8 +71,13 @@ public interface CardHandler {
   }
 
   @FunctionalInterface
+  interface Notifier {
+    void notify(String message);
+  }
+
+  @FunctionalInterface
   interface HandlerFunction {
-    void handle(GameState.PlayerState player, List<GameState.PlayerState> opponents, Map<String, Map<String, Object>> confirmations, int count);
+    void handle(GameState.PlayerState player, GameState.PlayerState activePlayer, List<GameState.PlayerState> opponents, Map<String, Map<String, Object>> confirmations, int count, Notifier notifier);
   }
 
   @FunctionalInterface
@@ -69,34 +85,34 @@ public interface CardHandler {
     void handle(GameState.PlayerState player);
   }
 
-  HandlerFunction stadium = (player, opponents, confirmations, count) -> {
+  HandlerFunction stadium = (player, activePlayer, opponents, confirmations, count, notifier) -> {
     int sum = 0;
     for (GameState.PlayerState opponent : opponents) {
-      sum += remove("Стадион", opponent, count * 2, player);
+      sum += remove("Стадион", opponent, count * 2, player, notifier);
     }
     if (sum > 0) {
-      add("Стадион", ADMIN, player, sum);
+      add("Стадион", ADMIN, player, sum, notifier);
     }
   };
 
-  HandlerFunction tvCenter = (player, opponents, confirmations, count) -> {
+  HandlerFunction tvCenter = (player, activePlayer, opponents, confirmations, count, notifier) -> {
     String targetName = (String) confirmations.get("Телецентр").get("opponent");
     GameState.PlayerState target = opponents.stream().filter(op -> op.getUser().getUsername().equals(targetName)).findFirst()
         .orElseThrow();
-    int removed = remove("Телецентр", target, 5, player);
-    add("Телецентр", ADMIN, player, removed);
+    int removed = remove("Телецентр", target, 5, player, notifier);
+    add("Телецентр", ADMIN, player, removed, notifier);
   };
 
-  HandlerFunction publishing = (player, opponents, confirmations, count) -> {
+  HandlerFunction publishing = (player, activePlayer, opponents, confirmations, count, notifier) -> {
     int sum = 0;
     for (GameState.PlayerState opponent : opponents) {
       int cardsCount = opponent.getCards().stream()
           .filter(c -> c.getHandler().getType() == CUP || c.getHandler().getType() == BOX)
           .mapToInt(GameState.CardState::getCount).sum();
-      sum += remove("Издательство", opponent, cardsCount, player);
+      sum += remove("Издательство", opponent, cardsCount, player, notifier);
     }
     if (sum > 0) {
-      add("Издательство", ADMIN, player, sum);
+      add("Издательство", ADMIN, player, sum, notifier);
     }
   };
 
@@ -138,8 +154,19 @@ public interface CardHandler {
       this.color = color;
       this.income = income;
       this.numbers = numbers;
-      this.handlerFunction = ((player, opponents, confirmations, count) -> {
-        add(name, type, player, income * count);
+      this.handlerFunction = ((player, activePlayer, opponents, confirmations, count, notifier) -> {
+        add(name, type, player, (income + mall(player)) * count, notifier);
+      });
+      return this;
+    }
+
+    public Builder simpleRed(List<Integer> numbers, int income) {
+      this.color = Color.RED;
+      this.income = income;
+      this.numbers = numbers;
+      this.handlerFunction = ((player, activePlayer, opponents, confirmations, count, notifier) -> {
+        int minus = remove(name, activePlayer, (income + mall(player)) * count, player, notifier);
+        add(name, type, player, minus, notifier);
       });
       return this;
     }
@@ -148,14 +175,14 @@ public interface CardHandler {
       this.color = Color.GREEN;
       this.income = income;
       this.numbers = numbers;
-      this.handlerFunction = ((player, opponents, confirmations, count) -> {
+      this.handlerFunction = ((player, activePlayer, opponents, confirmations, count, notifier) -> {
         final int[] relatedCards = {0};
         player.getCards().forEach((card) -> {
           if (checkCard.apply(card.getHandler())) {
             relatedCards[0] += card.getCount();
           }
         });
-        add(name, type, player, income * relatedCards[0] * count);
+        add(name, type, player, (income + mall(player)) * relatedCards[0] * count, notifier);
       });
       return this;
     }
@@ -164,7 +191,7 @@ public interface CardHandler {
       this.color = Color.GREEN;
       this.income = income;
       this.numbers = numbers;
-      this.handlerFunction = ((player, opponents, confirmations, count) -> {
+      this.handlerFunction = ((player, activePlayer, opponents, confirmations, count, notifier) -> {
         AtomicInteger cupsCount = new AtomicInteger();
         player.getCards().forEach((card) -> {
           if (checkCard.apply(card.getHandler())) {
@@ -178,12 +205,13 @@ public interface CardHandler {
             }
           });
         });
-        add(name, type, player, 1 * cupsCount.get() * count);
+        add(name, type, player, 1 * cupsCount.get() * count, notifier);
       });
       return this;
     }
 
     public Builder purple(List<Integer> numbers, HandlerFunction handlerFunction) {
+      this.numbers = numbers;
       this.color = Color.PURPLE;
       this.handlerFunction = handlerFunction;
       return this;
@@ -214,6 +242,10 @@ public interface CardHandler {
       return this;
     }
 
+    private int mall(GameState.PlayerState player) {
+      return player.hasCard("Торговый центр") && (type == CUP || type == BOX) ? 1 : 0;
+    }
+
 
     public CardHandler build() {
       return new CardHandler() {
@@ -221,8 +253,8 @@ public interface CardHandler {
         @Override public Type getType() { return type; }
         @Override public String getName() { return name; }
         @Override
-        public void handle(GameState.PlayerState player, List<GameState.PlayerState> opponents, Map<String, Map<String, Object>> confirmations, int count) {
-          handlerFunction.handle(player, opponents, confirmations, count);
+        public void handle(GameState.PlayerState player, GameState.PlayerState activePlayer, List<GameState.PlayerState> opponents, Map<String, Map<String, Object>> confirmations, int count, Notifier notifier) {
+          handlerFunction.handle(player, activePlayer, opponents, confirmations, count, notifier);
         }
         @Override public List<Integer> getNumbers() { return numbers; }
         @Override public int getPrice() { return price;}
@@ -230,6 +262,10 @@ public interface CardHandler {
         @Override public int sightsRequired() {return sightsRequired;}
         @Override public boolean isConfirmationRequired(int dice) {
           return withConfirmation && (numbers == null || numbers.contains(dice));
+        }
+        @Override
+        public void doAfterBuild(GameState.PlayerState player) {
+          if (afterBuildFunction != null) {afterBuildFunction.handle(player); }
         }
       };
     }

@@ -36,16 +36,16 @@ public class GameSessionService {
   {
     Stream.of(
 
-            CardHandler.Builder.create("Универсам", CardHandler.Type.BOX, 0)
+            CardHandler.Builder.create("Универсам", CardHandler.Type.BOX, 0) //ok
                 .simpleGreenBlue(GREEN, List.of(2), 2)
                 .sightsRequired(1).build(),
-            CardHandler.Builder.create("Пекарня", CardHandler.Type.BOX, 1)
+            CardHandler.Builder.create("Пекарня", CardHandler.Type.BOX, 1) //ok
                 .simpleGreenBlue(GREEN, List.of(2, 3), 1)
                 .startCard(true).build(),
-            CardHandler.Builder.create("Магазин", CardHandler.Type.BOX, 2)
+            CardHandler.Builder.create("Магазин", CardHandler.Type.BOX, 2) //ok
                 .simpleGreenBlue(GREEN, List.of(4), 3).build(),
-            CardHandler.Builder.create("Банк", CardHandler.Type.BUSINESS, 0)
-                .simpleGreenBlue(GREEN, List.of(4), -2)
+            CardHandler.Builder.create("Банк", CardHandler.Type.BUSINESS, 0) //ok
+                .simpleGreenBlue(GREEN, List.of(4), -2) // ok
                 .afterBuild(player -> player.setMoney(player.getMoney() + 5)).build(),
             // 4 demontaj
 
@@ -100,13 +100,20 @@ public class GameSessionService {
             // 10 Венчурный фонд
             // 11 13 Парк
 
-            // susi
-        // kafe
-        // 5 pres restoran
-        // 7 pizza
-        // 8 zakuska
-        // 9-10 restoran
-        // 12-14 bar
+            CardHandler.Builder.create("Суси-бар", CardHandler.Type.CUP, 2)
+                    .simpleRed(List.of(1), 3).requiredCard("Порт").build(),
+            CardHandler.Builder.create("Кафе", CardHandler.Type.CUP, 2)
+                .simpleRed(List.of(3), 1).build(),
+            CardHandler.Builder.create("Престижный ресторан", CardHandler.Type.CUP, 3)
+                .simpleRed(List.of(5), 5).sightsRequired(2).build(),
+            CardHandler.Builder.create("Пиццерия", CardHandler.Type.CUP, 1)
+                .simpleRed(List.of(7), 1).build(),
+            CardHandler.Builder.create("Закусочная", CardHandler.Type.CUP, 1)
+                .simpleRed(List.of(8), 1).build(),
+            CardHandler.Builder.create("Ресторан", CardHandler.Type.CUP, 3)
+                .simpleRed(List.of(9, 10), 2).build(),
+            CardHandler.Builder.create("Частный бар", CardHandler.Type.CUP, 4)
+                .simpleRed(List.of(12, 14), 1000).build(),
 
             CardHandler.Builder.create("Ратуша", CardHandler.Type.ADMIN, -1)
                 .yellow().startCard(true).build(), //ok
@@ -159,7 +166,7 @@ public class GameSessionService {
       }
     }
 
-    calculateIncomes(state, activePlayer);
+    calculateIncomes(gameId, state, activePlayer);
   }
 
   public void diceRoll(String gameId, String username, int diceCount) {
@@ -183,13 +190,16 @@ public class GameSessionService {
         state.setWasDouble(true);
       }
       dice += secondDice;
+      notifier.notifyEvent(gameId, "Игрок %s бросил два кубика: %d - %d".formatted(username, dice, secondDice));
+    } else {
+      notifier.notifyEvent(gameId, "Игрок %s бросил кубик: %d".formatted(username, dice));
     }
     state.setLastDice(dice);
 
-    calculateIncomes(state, activePlayer);
+    calculateIncomes(gameId, state, activePlayer);
   }
 
-  public void calculateIncomes(GameState state, GameState.PlayerState activePlayer) {
+  public void calculateIncomes(String gameId, GameState state, GameState.PlayerState activePlayer) {
     for (GameState.CardState card : activePlayer.getCards()) {
 
       if (card.getHandler().isConfirmationRequired(state.getLastDice()) && !state.getConfirmations().containsKey(card.getName())) {
@@ -200,32 +210,40 @@ public class GameSessionService {
       }
     }
 
-    for (GameState.PlayerState player : state.getPlayers()) {
-      int index = state.getPlayers().indexOf(player);
-
-      player.getLastMoneyChange().removeIf(all -> true);
-      List<GameState.PlayerState> opponentsBefore = new ArrayList<>();
-      for (int i = index - 1; i >= 0; i--) {
-        opponentsBefore.add(state.getPlayers().get(i));
-      }
-      for (int i = state.getPlayers().size() - 1; i > index; i--) {
-        opponentsBefore.add(state.getPlayers().get(i));
-      }
-
-      int dice = state.getLastDice();
-      player.getCards().forEach((cardState) -> {
-        CardHandler cardHandler = cardState.getHandler();
-
-        if (((cardHandler.getColor() == GREEN && activePlayer == player) ||
-            (cardHandler.getColor() == BLUE) ||
-            (cardHandler.getColor() == CardHandler.Color.RED && activePlayer != player) ||
-            (cardHandler.getColor() == PURPLE && activePlayer == player))
-            && cardHandler.getNumbers().contains(dice)) {
-          cardHandler.handle(player, opponentsBefore, state.getConfirmations(), cardState.getCount());
-        }
-
-      });
+    int activePlayerIndex = state.getActivePlayer();
+    List<GameState.PlayerState> opponentsBefore = new ArrayList<>();
+    for (int i = activePlayerIndex - 1; i >= 0; i--) {
+      opponentsBefore.add(state.getPlayers().get(i));
     }
+    for (int i = state.getPlayers().size() - 1; i > activePlayerIndex; i--) {
+      opponentsBefore.add(state.getPlayers().get(i));
+    }
+
+    for (GameState.PlayerState player : state.getPlayers()) {
+      player.getLastMoneyChange().removeIf(all -> true);
+    }
+    int dice = state.getLastDice();
+    long activePlayerSights = activePlayer.getCards().stream().filter(c -> c.getHandler().getColor() == YELLOW).count();
+
+    for (GameState.PlayerState opponent: opponentsBefore) {
+      opponent.getCards().stream()
+          .filter(c -> c.getHandler().getColor() == RED)
+          .filter(c -> c.getHandler().getNumbers().contains(dice))
+          .filter(c -> c.getHandler().sightsRequired() == 0 || activePlayerSights >= c.getHandler().sightsRequired())
+          .forEach(cardState -> {
+            cardState.getHandler().handle(opponent, activePlayer, null, state.getConfirmations(), cardState.getCount(),
+                (message) -> notifier.notifyEvent(gameId, message));
+          });
+    }
+
+    activePlayer.getCards().stream()
+        .filter(c -> c.getHandler().getColor() != RED && c.getHandler().getColor() != YELLOW)
+        .filter(c -> c.getHandler().getNumbers().contains(dice))
+        .filter(c -> c.getHandler().sightsRequired() == 0 || activePlayerSights <= c.getHandler().sightsRequired())
+        .forEach(cardState -> {
+          cardState.getHandler().handle(activePlayer, activePlayer, opponentsBefore, state.getConfirmations(), cardState.getCount(),
+              (message) -> notifier.notifyEvent(gameId, message));
+        });
 
     if (activePlayer.hasCard("Ратуша") && activePlayer.getMoney() == 0) {
       activePlayer.setMoney(1);
@@ -291,6 +309,7 @@ public class GameSessionService {
       activePlayer.addCard(cardHandler);
       activePlayer.setLastBoughtCard(cardName);
       activePlayer.setMoney(activePlayer.getMoney() - cardHandler.getPrice());
+      cardHandler.doAfterBuild(activePlayer);
     } else {
       //TODO: no money
       log.error("No money");
