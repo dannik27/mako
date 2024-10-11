@@ -12,7 +12,7 @@ public class GameState {
   private Game game;
   private List<PlayerState> players;
 
-  private int activePlayer;
+  private int activePlayerIndex;
   private GamePhase phase;
   private int lastDice;
   private String lastBuilding;
@@ -21,6 +21,18 @@ public class GameState {
 
   private Map<String, Map<String, Object>> confirmations = new HashMap<>();
   private String requiredConfirmation;
+
+  public PlayerState getActivePlayer() {
+    return players.get(activePlayerIndex);
+  }
+
+  public void setNextPlayer() {
+    if (getActivePlayerIndex() < getPlayers().size() - 1) {
+      setActivePlayerIndex(getActivePlayerIndex() + 1);
+    } else {
+      setActivePlayerIndex(0);
+    }
+  }
 
   public static GameState init(Game game, List<CardHandler> startCards) {
     GameState state = new GameState();
@@ -45,6 +57,7 @@ public class GameState {
     private List<CardState> cards = new ArrayList<>();
     private List<MoneyChange> lastMoneyChange = new ArrayList<>();
     private String lastBoughtCard;
+    private boolean left = false;
 
     public boolean hasCard(String cardName) {
       return cards.stream().anyMatch(c -> c.getHandler().getName().equals(cardName));

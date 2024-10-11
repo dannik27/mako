@@ -4,8 +4,6 @@ import com.dannik.mako.model.GameState;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -28,9 +26,9 @@ public class GameStateResponse {
   }
 
   public static GameStateResponse of(GameState state, String winner) {
-    boolean twoDices = state.getPlayers().get(state.getActivePlayer()).hasCard("Вокзал");
+    boolean twoDices = state.getPlayers().get(state.getActivePlayerIndex()).hasCard("Вокзал");
 
-    return new GameStateResponse(state.getPlayers().get(state.getActivePlayer()).getUser().getUsername(),
+    return new GameStateResponse(state.getPlayers().get(state.getActivePlayerIndex()).getUser().getUsername(),
         twoDices,
         state.getPlayers().stream().map(PlayerStateDto::of).toList(),
         state.getPhase().name(),
@@ -49,13 +47,21 @@ public class GameStateResponse {
     private final Map<String, Integer> disabledCards;
     private final List<GameState.MoneyChange> lastMoneyChange;
     private final String lastBoughtCard;
+    private final boolean left;
 
     public static PlayerStateDto of(GameState.PlayerState state) {
       return new PlayerStateDto(state.getUser().getUsername(), state.getUser().isOnline(), state.getUser().isBot(),
           state.getMoney(), state.getCards().stream().collect(Collectors.toMap(c -> c.getHandler().getName(), GameState.CardState::getCount)),
           state.getCards().stream().collect(Collectors.toMap(c -> c.getHandler().getName(), GameState.CardState::getDisabledCount)),
-          state.getLastMoneyChange(), state.getLastBoughtCard());
+          state.getLastMoneyChange(), state.getLastBoughtCard(), state.isLeft());
     }
   }
+
+//  @Data
+//  @RequiredArgsConstructor
+//  public static class CardStateDto {
+//    private final String name;
+//    private final String color;
+//  }
 
 }

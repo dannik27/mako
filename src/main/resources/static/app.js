@@ -34,6 +34,7 @@ createApp({
     const lastDice = ref('')
     const twoDices = ref(false)
     const requiredConfirmation = ref('')
+    const playerInfoModal = ref(false)
 
     const cards = ref('')
 
@@ -59,6 +60,10 @@ createApp({
         winner.value = newState.winner
         requiredConfirmation.value = newState.requiredConfirmation
 
+        if (playerState.value.left) {
+          reset()
+        }
+
 //        .filter(player => player.name != username.value)
     }
 
@@ -74,6 +79,19 @@ createApp({
       console.log("Event: " + message['body'])
     }
 
+    let subscriptions = []
+
+    const subscribeGame = (gameId) => {
+        subscriptions.push(stompClient.subscribe(`/topic/game/${gameId}/state`, onGameStateReceived));
+        subscriptions.push(stompClient.subscribe(`/topic/game/${gameId}/cards`, onCardsReceived));
+        subscriptions.push(stompClient.subscribe(`/topic/game/${gameId}/event`, onEventReceived));
+    }
+
+    const unsubscribeGame = () => {
+      subscriptions.forEach(s => s.unsubscribe())
+      subscriptions = []
+    }
+
     const onWsConnect = (frame) => {
       console.log('Connected: ' + frame);
 
@@ -83,11 +101,7 @@ createApp({
           if (body.activeGame) {
             currentGame.value = body.activeGame
             console.log("Game already started");
-            stompClient.subscribe(`/topic/game/${currentGame.value.id}/state`, onGameStateReceived);
-            stompClient.subscribe(`/topic/game/${currentGame.value.id}/cards`, onCardsReceived);
-            stompClient.subscribe(`/topic/game/${currentGame.value.id}/event`, onEventReceived);
-
-
+            subscribeGame(currentGame.value.id)
 
             if (currentGame.value.status == 'CREATED') {
                 mainScreen.value = LOBBY_SCREEN
@@ -100,8 +114,8 @@ createApp({
                     headers: { username: username.value }
                 });
             }
-//            showGame(body.activeGame);
           } else {
+            unsubscribeGame()
             currentGame.value = null
             mainScreen.value = MENU_SCREEN
             stompClient.publish({
@@ -115,7 +129,7 @@ createApp({
       });
 
       stompClient.subscribe('/user/topic/games', (message) => {
-          console.log("Games received: " + JSON.parse(message['body'])['games'])
+          console.log("Games received: " + message['body'])
           games.value = JSON.parse(message['body'])['games']
       });
 
@@ -352,7 +366,49 @@ createApp({
     ])
 
     const boughtCards = () => {
-      Object.entries(playerState.value.cards).map(e => ({ name: e[0], count: e[1]}))
+      return Object.entries(playerState.value.cards)
+        .map(e => {
+        let card = cards.value.find(c => c.name == e[0])
+        let shopGroup = shopGroups.value.find(g => g.color == card.color)
+          return { name: e[0], count: e[1], color: card.color, style: shopGroup.activeStyle}
+        }).filter(c => c.color != 'YELLOW')
+    }
+
+    const yellowCards = (user) => {
+
+      let cardHandlers = cards.value.filter(c => c.color == 'YELLOW')
+        .toSorted((a, b) => {
+          let valueA = a.numbers ? a.numbers[0] : a.price
+          let valueB = b.numbers ? b.numbers[0] : b.price
+          return valueA - valueB
+          })
+
+      let cardsState = user == username.value
+        ? playerState.value.cards
+        : opponents.value.find(op => op.name == user).cards
+
+      return cardHandlers.map(c => {
+
+        return {
+          name: c.name,
+          price: c.price,
+          style: cardsState.hasOwnProperty(c.name) ? { 'background-color': '#EEE8AA' } : { 'background-color': '#778899' }
+        }
+
+      })
+
+    }
+
+    const showPlayerInfo = (user) => {
+      playerInfoModal.value = user
+    }
+
+    const leaveGame = () => {
+      stompClient.publish({
+          destination: `/app/session/${currentGame.value.id}/leave`,
+          body: "{}",
+          headers: { username: username.value }
+      });
     }
 
     const message = ref('Hello vue!')
@@ -394,6 +450,11 @@ createApp({
       requiredConfirmation,
       confirm,
       shopGroups,
+      boughtCards,
+      yellowCards,
+      playerInfoModal,
+      showPlayerInfo,
+      leaveGame,
 
       diceRoll,
       buyCard,

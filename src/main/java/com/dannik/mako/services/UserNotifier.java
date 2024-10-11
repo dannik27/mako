@@ -53,7 +53,7 @@ public class UserNotifier {
   record CardInfo(String name, String color, int price, List<Integer> numbers, boolean startCard) {}
 
   public void notifyCards(String gameId, Collection<CardHandler> cards) {
-    List<CardInfo> cardInfo = cards.stream().filter(c -> c.getPrice() >= 0)
+    List<CardInfo> cardInfo = cards.stream()
         .map(c -> new CardInfo(c.getName(), c.getColor().name(), c.getPrice(), c.getColor() != YELLOW ? c.getNumbers() : null, c.isStartCard())).toList();
 
     messagingTemplate.convertAndSend("/topic/game/%s/cards".formatted(gameId), cardInfo);

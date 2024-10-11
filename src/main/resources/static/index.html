@@ -61,7 +61,7 @@
                             <th>{{ game.name }}</th>
                             <th>{{ game.players.length }} / 5</th>
                             <th>{{ game.authorName }}</th>
-                            <th><button v-on:click="join(game.id)" type="button"> Join </button></th>
+                            <th><button v-if="game.status=='CREATED'" v-on:click="join(game.id)" type="button"> Join </button></th>
                         </tr>
                     </tbody>
                 </table>
@@ -94,9 +94,9 @@
     <div v-if="showGameScreen" class="game-screen">
 
 
-<!--        <div class="game-header">-->
-<!--            The game {{ currentGame.name }}-->
-<!--        </div>-->
+        <div class="game-header">
+            Игра: {{ currentGame.name }} <button v-on:click="leaveGame()" type="button">Выйти из игры</button>
+        </div>
         <div class="action-panel">
             <div >Сейчас ходит: {{ activePlayer }}</div>
             <div v-if="gamePhase == 'WINNER'">
@@ -178,15 +178,28 @@
             </div>
         </div>
         <div class="opponents-panel">
-            <div v-for="opponent in opponents" :key="name" >
+<!--            <div v-on:click="showPlayerInfo(username)" >-->
+<!--                <b>{{ playerState.name }} (Вы)</b> money: {{ playerState.money }}-->
+<!--                <div style="display:flex;justify-content:space-evenly;">-->
+<!--                    <div v-for="card in yellowCards(playerState.name)" :style="[card.style, {padding: '2px'}]">-->
+<!--                        {{ card.price }}-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+            <div v-on:click="showPlayerInfo(opponent.name)" v-for="opponent in opponents" :key="name" >
                 <b>{{ opponent.name }}</b> money: {{ opponent.money }}
 
-                <div v-for="(count, card) in opponent.cards" :key="card" style="display:inline;padding:2px;">
-                    <span v-if="isLastBoughtCard(opponent.name, card)"><b>{{ card }}</b></span>
-                    <span v-else>{{ card }}</span>
-                    <span v-if="count > 1">(x{{ count }})</span>
-                </div>
+<!--                <div v-for="(count, card) in opponent.cards" :key="card" style="display:inline;padding:2px;">-->
+<!--                    <span v-if="isLastBoughtCard(opponent.name, card)"><b>{{ card }}</b></span>-->
+<!--                    <span v-else>{{ card }}</span>-->
+<!--                    <span v-if="count > 1">(x{{ count }})</span>-->
+<!--                </div>-->
 
+                <div style="display:flex;justify-content:space-evenly;">
+                    <div v-for="card in yellowCards(opponent.name)" :style="[card.style, {padding: '2px'}]">
+                        {{ card.price }}
+                    </div>
+                </div>
 
             </div>
         </div>
@@ -197,20 +210,25 @@
 
         <div class="bought-cards-wrapper">
             <div class="bought-cards">
-                <div v-for="(count, card) in playerState.cards" :key="card" class="bought-card">
-                    {{ card }} <span v-if="count > 1">(x{{ count }})</span> {{ calculateLastChange(card) }}
+                <div v-for="card in boughtCards()" :key="card.name" class="bought-card" :style="[card.style]">
+                    {{ card.name }} <span v-if="card.count > 1">(x{{ card.count }})</span> {{ calculateLastChange(card) }}
                 </div>
             </div>
             <div style="display:flex;justify-content:space-around;">
-                <div v-for="card in cardsByColor('YELLOW')" class="bought-card">
+                <div v-for="card in yellowCards(username)" class="bought-card" :style="[card.style]" >
                     {{ card.name }}
                 </div>
             </div>
 
 
         </div>
-
-
+    </div>
+    <div class="modal-window" :style="[playerInfoModal ? { display: 'block' } : {display: 'none'}]">
+        <div class="modal-content">
+            <span v-on:click="playerInfoModal = false" class="close-button">&times;</span>
+            <p> {{ playerInfoModal }}</p>
+            <p>Some text in the Modal.. sa a sd sa das das dasd asd as das das dasd sad asd as da sda sd sadsdsa dasd asd asd asd asd asd asdas</p>
+        </div>
     </div>
 </div>
 

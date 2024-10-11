@@ -3,19 +3,13 @@ package com.dannik.mako.services;
 import com.dannik.mako.model.CardHandler;
 import com.dannik.mako.model.Game;
 import com.dannik.mako.model.GameState;
-import com.dannik.mako.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static com.dannik.mako.model.CardHandler.Color.*;
@@ -136,6 +130,20 @@ public class GameSessionService {
     notifier.notifyGameState(sessions.get(gameId));
   }
 
+  public void leaveGame(String gameId, String username) {
+
+    GameState state = sessions.get(gameId);
+    GameState.PlayerState player = state.getPlayers().stream().filter(p -> p.getUser().getUsername().equals(username))
+        .findFirst().get();
+    player.setLeft(true);
+    if (state.getActivePlayer() == player) {
+      state.setNextPlayer();
+    }
+    gameService.getActiveGame(username).get().getPlayers().remove(player.getUser());//todo: mb refactor
+
+    notifier.notifyGameState(state);
+  }
+
   public void confirm(String gameId, String username, Map<String, Object> confirmation) {
     String cardName = (String) confirmation.get("name");
     GameState state = sessions.get(gameId);
@@ -144,7 +152,7 @@ public class GameSessionService {
       return; //TODO: handle
     }
 
-    GameState.PlayerState activePlayer = state.getPlayers().get(state.getActivePlayer());
+    GameState.PlayerState activePlayer = state.getPlayers().get(state.getActivePlayerIndex());
     if (!activePlayer.getUser().getUsername().equals(username)) {
       log.error("It is not your turn: {} != {}", activePlayer.getUser().getUsername(), username);
       return;
@@ -176,7 +184,7 @@ public class GameSessionService {
       return; //TODO: handle
     }
 
-    GameState.PlayerState activePlayer = state.getPlayers().get(state.getActivePlayer());
+    GameState.PlayerState activePlayer = state.getPlayers().get(state.getActivePlayerIndex());
     if (!activePlayer.getUser().getUsername().equals(username)) {
       log.error("It is not your turn: {} != {}", activePlayer.getUser().getUsername(), username);
       return;
@@ -189,8 +197,8 @@ public class GameSessionService {
       if (dice == secondDice) {
         state.setWasDouble(true);
       }
-      dice += secondDice;
       notifier.notifyEvent(gameId, "Игрок %s бросил два кубика: %d - %d".formatted(username, dice, secondDice));
+      dice += secondDice;
     } else {
       notifier.notifyEvent(gameId, "Игрок %s бросил кубик: %d".formatted(username, dice));
     }
@@ -210,7 +218,7 @@ public class GameSessionService {
       }
     }
 
-    int activePlayerIndex = state.getActivePlayer();
+    int activePlayerIndex = state.getActivePlayerIndex();
     List<GameState.PlayerState> opponentsBefore = new ArrayList<>();
     for (int i = activePlayerIndex - 1; i >= 0; i--) {
       opponentsBefore.add(state.getPlayers().get(i));
@@ -261,7 +269,7 @@ public class GameSessionService {
       return; //TODO: handle
     }
 
-    GameState.PlayerState activePlayer = state.getPlayers().get(state.getActivePlayer());
+    GameState.PlayerState activePlayer = state.getPlayers().get(state.getActivePlayerIndex());
     if (!activePlayer.getUser().getUsername().equals(username)) {
       log.error("It is not your turn: {} != {}", activePlayer.getUser().getUsername(), username);
       return;
@@ -274,11 +282,7 @@ public class GameSessionService {
     }
 
     if (!activePlayer.hasCard("Парк развлечений") || !state.isWasDouble()) {
-      if (state.getActivePlayer() < state.getPlayers().size() - 1) {
-        state.setActivePlayer(state.getActivePlayer() + 1);
-      } else {
-        state.setActivePlayer(0);
-      }
+      state.setNextPlayer();
     }
 
     state.setTurn(state.getTurn() + 1);
@@ -294,7 +298,7 @@ public class GameSessionService {
       return; //TODO: handle
     }
 
-    GameState.PlayerState activePlayer = state.getPlayers().get(state.getActivePlayer());
+    GameState.PlayerState activePlayer = state.getPlayers().get(state.getActivePlayerIndex());
     if (!activePlayer.getUser().getUsername().equals(username)) {
       log.error("It is not your turn: {} != {}", activePlayer.getUser().getUsername(), username);
       return;
@@ -327,10 +331,10 @@ public class GameSessionService {
 
     } else {
       if (!activePlayer.hasCard("Парк развлечений") || !state.isWasDouble()) {
-        if (state.getActivePlayer() < state.getPlayers().size() - 1) {
-          state.setActivePlayer(state.getActivePlayer() + 1);
+        if (state.getActivePlayerIndex() < state.getPlayers().size() - 1) {
+          state.setActivePlayerIndex(state.getActivePlayerIndex() + 1);
         } else {
-          state.setActivePlayer(0);
+          state.setActivePlayerIndex(0);
         }
       }
       state.setTurn(state.getTurn() + 1);
@@ -339,6 +343,12 @@ public class GameSessionService {
     }
 
 
+  }
+
+  public Optional<GameState> findActiveGameByUser(String username) {
+    return sessions.values().stream()
+        .filter(game -> game.getPlayers().stream().anyMatch(p -> p.getUser().getUsername().equals(username)))
+        .findFirst();
   }
 
   public record CardAndCount(CardHandler card, int count) {

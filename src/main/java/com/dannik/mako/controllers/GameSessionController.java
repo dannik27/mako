@@ -67,5 +67,13 @@ public class GameSessionController {
     sessionService.confirm(gameId, username, message);
   }
 
+  @MessageMapping("/session/{gameId}/leave")
+  public void leave(@Payload Map<String, Object> message,
+                      @Header("username") String username,
+                      @DestinationVariable("gameId") String gameId) throws Exception {
+
+    sessionService.leaveGame(gameId, username);
+  }
+
 
 }
