@@ -62,6 +62,8 @@ public interface CardHandler {
 
   void doAfterBuild(GameState.PlayerState player);
 
+  String getRequiredCard();
+
   enum Color {
     BLUE, GREEN, RED, PURPLE, YELLOW
   }
@@ -113,6 +115,18 @@ public interface CardHandler {
     }
     if (sum > 0) {
       add("Издательство", ADMIN, player, sum, notifier);
+    }
+  };
+
+  HandlerFunction nalogovaya = (player, activePlayer, opponents, confirmations, count, notifier) -> {
+    int sum = 0;
+    for (GameState.PlayerState opponent : opponents) {
+      if (opponent.getMoney() >= 10) {
+        sum += remove("Налоговая инспекция", opponent, opponent.getMoney() / 2, player, notifier);
+      }
+    }
+    if (sum > 0) {
+      add("Налоговая инспекция", ADMIN, player, sum, notifier);
     }
   };
 
@@ -267,6 +281,8 @@ public interface CardHandler {
         public void doAfterBuild(GameState.PlayerState player) {
           if (afterBuildFunction != null) {afterBuildFunction.handle(player); }
         }
+
+        @Override public String getRequiredCard() {return requiredCard;}
       };
     }
 

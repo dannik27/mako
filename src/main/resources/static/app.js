@@ -4,13 +4,15 @@
 const { createApp, ref, onMounted, computed } = Vue
 
 const stompClient = new StompJs.Client({
-    brokerURL: 'ws://192.168.0.105:8080/qwe?username='
+//    brokerURL: 'ws://localhost:8080/qwe?username='
+    brokerURL: '/qwe?username='
 });
 
 
 createApp({
   setup() {
 
+    const LOGIN_SCREEN = 'login'
     const MENU_SCREEN = 'main-menu'
     const LOBBY_SCREEN = 'lobby'
     const GAME_SCREEN = 'game'
@@ -35,6 +37,8 @@ createApp({
     const twoDices = ref(false)
     const requiredConfirmation = ref('')
     const playerInfoModal = ref(false)
+    const historyModal = ref(false)
+    const events = ref([])
 
     const cards = ref('')
 
@@ -48,7 +52,6 @@ createApp({
         let newState = JSON.parse(message['body'])
 
         let currentPlayerIndex = newState['players'].findIndex(player => player.name == username.value)
-        console.log(currentPlayerIndex)
 
         playerState.value = newState['players'][currentPlayerIndex]
         opponents.value = newState['players'].toSpliced(currentPlayerIndex, 1)
@@ -77,6 +80,7 @@ createApp({
 
     const onEventReceived = (message) => {
       console.log("Event: " + message['body'])
+      events.value.push(message['body'])
     }
 
     let subscriptions = []
@@ -158,16 +162,6 @@ createApp({
           }
       });
 
-//      stompClient.subscribe('/user/topic/game/' + activeGameId + "/state", (message) => {
-//          let body = JSON.parse(message['body'])
-//          if (body.status === 'lobby') {
-//              console.log("lobby")
-//          }
-//          if (body.status === 'turn') {
-//              console.log("turn")
-//          }
-//      });
-
       reset()
 
       connected.value = true
@@ -227,19 +221,25 @@ createApp({
           return
         }
         console.log("qqq " + username.value)
+        localStorage.setItem("username", username.value)
         stompClient.onConnect = onWsConnect
         stompClient.activate();
     }
 
     onMounted(() => {
-      username.value = 'qwe'
-      connect()
+      let savedUser = localStorage.getItem("username")
+      if (savedUser) {
+        username.value = savedUser
+        connect()
+      }
     })
 
 
     const disconnect = () => {
         stompClient.deactivate();
         connected.value = false
+        mainScreen.value = LOGIN_SCREEN
+        localStorage.removeItem("username")
     }
 
 
@@ -365,17 +365,34 @@ createApp({
       }
     ])
 
-    const boughtCards = () => {
-      return Object.entries(playerState.value.cards)
+    const boughtCards = (user) => {
+      let cardsState = user == username.value
+            ? playerState.value.cards
+            : opponents.value.find(op => op.name == user).cards
+
+      return Object.entries(cardsState)
         .map(e => {
         let card = cards.value.find(c => c.name == e[0])
         let shopGroup = shopGroups.value.find(g => g.color == card.color)
-          return { name: e[0], count: e[1], color: card.color, style: shopGroup.activeStyle}
+          return {
+            name: e[0],
+            count: e[1],
+            color: card.color,
+            numbers: card.numbers,
+            numbersStr: card.numbers == null ? '' : card.numbers.length == 1 ? card.numbers[0] : card.numbers[0] + '-' + card.numbers[card.numbers.length - 1],
+            style: shopGroup.activeStyle
+            }
         }).filter(c => c.color != 'YELLOW')
+          .toSorted((a, b) => {
+             if (a.color == b.color) {
+                return a.numbers[0] - b.numbers[0]
+             } else {
+                return shopGroups.value.findIndex(g => g.color == a.color) - shopGroups.value.findIndex(g => g.color == b.color)
+             }
+           })
     }
 
     const yellowCards = (user) => {
-
       let cardHandlers = cards.value.filter(c => c.color == 'YELLOW')
         .toSorted((a, b) => {
           let valueA = a.numbers ? a.numbers[0] : a.price
@@ -399,10 +416,6 @@ createApp({
 
     }
 
-    const showPlayerInfo = (user) => {
-      playerInfoModal.value = user
-    }
-
     const leaveGame = () => {
       stompClient.publish({
           destination: `/app/session/${currentGame.value.id}/leave`,
@@ -410,6 +423,7 @@ createApp({
           headers: { username: username.value }
       });
     }
+
 
     const message = ref('Hello vue!')
     return {
@@ -422,6 +436,7 @@ createApp({
       showGameScreen,
       message,
       reset,
+      mainScreen,
 
       games,
       join,
@@ -453,7 +468,8 @@ createApp({
       boughtCards,
       yellowCards,
       playerInfoModal,
-      showPlayerInfo,
+      historyModal,
+      events,
       leaveGame,
 
       diceRoll,

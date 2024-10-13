@@ -90,7 +90,8 @@ public class GameSessionService {
             CardHandler.Builder.create("Издательство", CardHandler.Type.ADMIN, 5)
                 .purple(List.of(7), CardHandler.publishing).build(),
             // 8 Клининговая компания
-            // 8-9 Налоговая инспекция
+            CardHandler.Builder.create("Налоговая инспекция", CardHandler.Type.ADMIN, 4)
+                .purple(List.of(8, 9), CardHandler.nalogovaya).build(),
             // 10 Венчурный фонд
             // 11 13 Парк
 
@@ -238,16 +239,30 @@ public class GameSessionService {
           .filter(c -> c.getHandler().getColor() == RED)
           .filter(c -> c.getHandler().getNumbers().contains(dice))
           .filter(c -> c.getHandler().sightsRequired() == 0 || activePlayerSights >= c.getHandler().sightsRequired())
+          .filter(c -> c.getHandler().getRequiredCard() == null || opponent.getCards().stream().anyMatch(cc -> cc.getHandler().getName().equals(c.getHandler().getRequiredCard())))
           .forEach(cardState -> {
             cardState.getHandler().handle(opponent, activePlayer, null, state.getConfirmations(), cardState.getCount(),
                 (message) -> notifier.notifyEvent(gameId, message));
           });
     }
 
+    for (GameState.PlayerState player: state.getPlayers()) {
+      player.getCards().stream()
+              .filter(c -> c.getHandler().getColor() == BLUE )
+              .filter(c -> c.getHandler().getNumbers().contains(dice))
+              .filter(c -> c.getHandler().sightsRequired() == 0 || activePlayerSights <= c.getHandler().sightsRequired())
+              .filter(c -> c.getHandler().getRequiredCard() == null || player.getCards().stream().anyMatch(cc -> cc.getHandler().getName().equals(c.getHandler().getRequiredCard())))
+              .forEach(cardState -> {
+                cardState.getHandler().handle(player, activePlayer, opponentsBefore, state.getConfirmations(), cardState.getCount(),
+                        (message) -> notifier.notifyEvent(gameId, message));
+              });
+    }
+
     activePlayer.getCards().stream()
-        .filter(c -> c.getHandler().getColor() != RED && c.getHandler().getColor() != YELLOW)
+        .filter(c -> c.getHandler().getColor() == GREEN || c.getHandler().getColor() == PURPLE)
         .filter(c -> c.getHandler().getNumbers().contains(dice))
         .filter(c -> c.getHandler().sightsRequired() == 0 || activePlayerSights <= c.getHandler().sightsRequired())
+            .filter(c -> c.getHandler().getRequiredCard() == null || activePlayer.getCards().stream().anyMatch(cc -> cc.getHandler().getName().equals(c.getHandler().getRequiredCard())))
         .forEach(cardState -> {
           cardState.getHandler().handle(activePlayer, activePlayer, opponentsBefore, state.getConfirmations(), cardState.getCount(),
               (message) -> notifier.notifyEvent(gameId, message));
@@ -330,7 +345,7 @@ public class GameSessionService {
       notifier.notifyWinner(state, username);
 
     } else {
-      if (!activePlayer.hasCard("Парк развлечений") || !state.isWasDouble()) {
+      if (cardName.equals("Парк развлечений") || !activePlayer.hasCard("Парк развлечений") || !state.isWasDouble()) { //todo: if park bought now
         if (state.getActivePlayerIndex() < state.getPlayers().size() - 1) {
           state.setActivePlayerIndex(state.getActivePlayerIndex() + 1);
         } else {

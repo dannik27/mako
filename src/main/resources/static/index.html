@@ -32,16 +32,16 @@
         </div>
     </div>
     <div v-if="showMainMenu" id="main-content" class="container1">
-
         <div class="row1">
             <div class="col-md-12">
-                <form class="form-inline">
-                    <div class="form-group">
-                        <label for="name">Game name</label>
-                        <input v-model="newGameName" type="text" class="form-control" placeholder="Game name here...">
-                    </div>
-                    <button v-on:click="createGame()" class="btn btn-default" type="button">Send</button>
-                </form>
+                <div style="font-size:large;">
+                    <span> Привет, {{ username }}, создай новую игру или присоединись к существующей </span>
+                    <button v-on:click="disconnect()" class="btn btn-default" type="button">Выйти</button>
+                </div>
+                <div style="padding:10px;display:flex;flex-direction:row;">
+                    <input v-model="newGameName" style="flex-grow:1;" type="text" class="form-control" placeholder="Введите название новой игры...">
+                    <button v-on:click="createGame()" class="btn btn-default" type="button">Создать</button>
+                </div>
             </div>
         </div>
 
@@ -51,9 +51,9 @@
                 <table class="table table-striped">
                     <thead>
                     <tr>
-                        <th>Games</th>
-                        <th>Players</th>
-                        <th>Author</th>
+                        <th>Игра</th>
+                        <th>Игроки</th>
+                        <th>Автор</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -61,31 +61,35 @@
                             <th>{{ game.name }}</th>
                             <th>{{ game.players.length }} / 5</th>
                             <th>{{ game.authorName }}</th>
-                            <th><button v-if="game.status=='CREATED'" v-on:click="join(game.id)" type="button"> Join </button></th>
+                            <th><button v-if="game.status=='CREATED'" class="btn btn-default" v-on:click="join(game.id)" type="button"> Присоединиться </button></th>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
-    <div v-if="showLobbyScreen" class="container1">
+    <div v-if="showLobbyScreen" style="padding:10px;">
 
-        The game {{ currentGame.name }}
-        <button v-on:click="leave">leave</button>
-        <button v-on:click="startGame()" type="button"> Start </button>
-        <button v-on:click="addBot('MrBlue')" type="button"> Add bot </button>
+        <div style="padding:10px;font-size:large;">
+            Игра {{ currentGame.name }}
+        </div>
+        <div style="display:flex;flex-direction:row;gap:10px;">
+            <button v-on:click="leave" class="btn btn-default">Выйти</button>
+            <button v-on:click="startGame()" type="button" class="btn btn-default"> Начать </button>
+            <button v-on:click="addBot('MrBlue')" type="button" class="btn btn-default"> Добавить бота </button>
+        </div>
 
         <table class="table table-striped">
             <thead>
             <tr>
-                <th>Players</th>
+                <th>Игроки:</th>
             </tr>
             </thead>
             <tbody>
             <tr v-for="player in currentGame.players">
                 <th>
                     <span>{{ player.name }}</span>
-                    <span v-if="player.isBot"> <button v-on:click="removeBot(player.name)" type="button"> Remove </button> </span>
+                    <span v-if="player.isBot"> <button v-on:click="removeBot(player.name)" type="button" class="btn btn-default"> Удалить </button> </span>
                 </th>
             </tr>
             </tbody>
@@ -94,14 +98,16 @@
     <div v-if="showGameScreen" class="game-screen">
 
 
-        <div class="game-header">
-            Игра: {{ currentGame.name }} <button v-on:click="leaveGame()" type="button">Выйти из игры</button>
+        <div class="game-header" style="display:flex;flex-direction:row;gap:10px;align-items:center;">
+            <span style="font-size:large;">Игра: {{ currentGame.name }}</span>
+            <button v-on:click="leaveGame()" type="button" class="btn btn-default">Выйти из игры</button>
+            <button v-on:click="historyModal = true" type="button" class="btn btn-default">История</button>
         </div>
         <div class="action-panel">
             <div >Сейчас ходит: {{ activePlayer }}</div>
             <div v-if="gamePhase == 'WINNER'">
                 Победил {{ winner }}
-                <button v-on:click="reset()" type="button"> Вернуться в меню</button>
+                <button v-on:click="reset()" type="button" class="btn btn-default"> Вернуться в меню</button>
             </div>
             <div v-if="activePlayer == username && gamePhase == 'CHOICE'">
                 <div>
@@ -109,19 +115,19 @@
                 </div>
                 <div v-if="requiredConfirmation == 'Порт'">
                     Вы можете добавить к кубику
-                    <button v-on:click="confirm('Порт', {addition: 2})" type="button"> Добавить 2 </button>
-                    <button v-on:click="confirm('Порт', {addition: 1})" type="button"> Добавить 1 </button>
-                    <button v-on:click="confirm('Порт', {addition: 0})" type="button"> Не добавлять </button>
+                    <button v-on:click="confirm('Порт', {addition: 2})" type="button" class="btn btn-default"> Добавить 2 </button>
+                    <button v-on:click="confirm('Порт', {addition: 1})" type="button" class="btn btn-default"> Добавить 1 </button>
+                    <button v-on:click="confirm('Порт', {addition: 0})" type="button" class="btn btn-default"> Не добавлять </button>
                 </div>
                 <div v-if="requiredConfirmation == 'Радиовышка'">
                     Вы можете перебросить кубики
-                    <button v-on:click="confirm('Радиовышка', {diceCount: 2})" type="button"> Бросить 2 </button>
-                    <button v-on:click="confirm('Радиовышка', {diceCount: 1})" type="button"> Бросить 1 </button>
-                    <button v-on:click="confirm('Радиовышка', {diceCount: 0})" type="button"> Оставить </button>
+                    <button v-if="twoDices" v-on:click="confirm('Радиовышка', {diceCount: 2})" type="button"> Бросить 2 </button>
+                    <button v-on:click="confirm('Радиовышка', {diceCount: 1})" type="button" class="btn btn-default"> Бросить 1 </button>
+                    <button v-on:click="confirm('Радиовышка', {diceCount: 0})" type="button" class="btn btn-default"> Оставить </button>
                 </div>
                 <div v-if="requiredConfirmation == 'Телецентр'">
                     Телецентр! Выберите у кого забрать 5 монет
-                    <button v-for="op in opponents" v-on:click="confirm('Телецентр', {opponent: op.name})" type="button"> {{ op.name }} </button>
+                    <button v-for="op in opponents" v-on:click="confirm('Телецентр', {opponent: op.name})" type="button" class="btn btn-default"> {{ op.name }} </button>
                 </div>
 
 
@@ -130,8 +136,8 @@
                 <div>
                     Бросайте кубик
                 </div>
-                <button v-on:click="diceRoll(1)" type="button"> Бросить один кубик </button>
-                <button v-if="twoDices" v-on:click="diceRoll(2)" type="button"> Бросить два кубика </button>
+                <button v-on:click="diceRoll(1)" type="button" class="btn btn-default"> Бросить один кубик </button>
+                <button v-if="twoDices" v-on:click="diceRoll(2)" type="button" class="btn btn-default"> Бросить два кубика </button>
 
             </div>
             <div v-if="activePlayer != username && gamePhase == 'DICE'">
@@ -186,7 +192,7 @@
 <!--                    </div>-->
 <!--                </div>-->
 <!--            </div>-->
-            <div v-on:click="showPlayerInfo(opponent.name)" v-for="opponent in opponents" :key="name" >
+            <div v-on:click="playerInfoModal = opponent.name" v-for="opponent in opponents" :key="opponent.name" >
                 <b>{{ opponent.name }}</b> money: {{ opponent.money }}
 
 <!--                <div v-for="(count, card) in opponent.cards" :key="card" style="display:inline;padding:2px;">-->
@@ -195,6 +201,12 @@
 <!--                    <span v-if="count > 1">(x{{ count }})</span>-->
 <!--                </div>-->
 
+                <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                    <div v-for="card in boughtCards(opponent.name)" :style="[card.style, {padding: '2px'}]">
+                        <span>{{ card.numbersStr }}</span>
+                        <span v-if="card.count > 1"> x{{ card.count }}</span>
+                    </div>
+                </div>
                 <div style="display:flex;justify-content:space-evenly;">
                     <div v-for="card in yellowCards(opponent.name)" :style="[card.style, {padding: '2px'}]">
                         {{ card.price }}
@@ -210,8 +222,8 @@
 
         <div class="bought-cards-wrapper">
             <div class="bought-cards">
-                <div v-for="card in boughtCards()" :key="card.name" class="bought-card" :style="[card.style]">
-                    {{ card.name }} <span v-if="card.count > 1">(x{{ card.count }})</span> {{ calculateLastChange(card) }}
+                <div v-for="card in boughtCards(username)" :key="card.name" class="bought-card" :style="[card.style]">
+                    {{ card.name }} <span v-if="card.count > 1">(x{{ card.count }})</span> {{ calculateLastChange(card.name) }}
                 </div>
             </div>
             <div style="display:flex;justify-content:space-around;">
@@ -219,15 +231,28 @@
                     {{ card.name }}
                 </div>
             </div>
-
-
         </div>
     </div>
-    <div class="modal-window" :style="[playerInfoModal ? { display: 'block' } : {display: 'none'}]">
+    <div class="modal-window" v-if="playerInfoModal">
         <div class="modal-content">
             <span v-on:click="playerInfoModal = false" class="close-button">&times;</span>
-            <p> {{ playerInfoModal }}</p>
-            <p>Some text in the Modal.. sa a sd sa das das dasd asd as das das dasd sad asd as da sda sd sadsdsa dasd asd asd asd asd asd asdas</p>
+            <p> Карты игрока: {{ playerInfoModal }}</p>
+            <table >
+                <tr v-for="card in boughtCards(playerInfoModal)" :key="card.name" :style="[card.style]">
+                    <td> {{ card.name }} <span v-if="card.count > 1">(x{{ card.count }})</span> {{ calculateLastChange(card.name) }} </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div class="modal-window" :style="[historyModal ? { display: 'block' } : {display: 'none'}]">
+        <div class="modal-content">
+            <span v-on:click="historyModal = false" class="close-button">&times;</span>
+            <p>История:</p>
+            <table>
+                <tr v-for="event in events">
+                    <td> {{ event }} </td>
+                </tr>
+            </table>
         </div>
     </div>
 </div>

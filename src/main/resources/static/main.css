@@ -98,7 +98,7 @@ html{
     font-size: 16px;
   }
   .card-name {
-    font: italic bold 100% cursive;
+    font: bold 100% cursive;
   }
   .price-circle {
     border-radius:10px;
@@ -122,7 +122,7 @@ html{
     font-size: 8px;
   }
   .card-name {
-    font: italic bold 150% cursive;
+    font: bold 150% cursive;
   }
   .price-circle {
     border-radius:8px;
@@ -131,7 +131,7 @@ html{
     line-height: 16px;
   }
   .bought-card {
-    font: italic bold 10px cursive;
+    font: bold 10px cursive;
   }
 }
 
