@@ -31,6 +31,7 @@ public class GameState {
       setActivePlayerIndex(getActivePlayerIndex() + 1);
     } else {
       setActivePlayerIndex(0);
+      setTurn(turn + 1);
     }
   }
 

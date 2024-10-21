@@ -2,112 +2,159 @@ package com.dannik.mako.services;
 
 import com.dannik.mako.messages.GameStateResponse;
 import com.dannik.mako.model.CardHandler;
+import com.dannik.mako.model.GameState;
+import lombok.RequiredArgsConstructor;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public interface BotHandler {
 
   void handle(GameStateResponse state, GameSessionService gameSessionService, String username, String gameId);
 
 
-  class MrBlue implements BotHandler {
+  @FunctionalInterface
+  interface BotCondition {
+    boolean check(GameStateResponse state);
+  }
 
-    @Override
-    public void handle(GameStateResponse state, GameSessionService gameSessionService, String username, String gameId) {
-      GameStateResponse.PlayerStateDto player = state.getPlayers()
-          .stream().filter(p -> p.getName().equals(username)).findFirst().get();
+  static BotCondition buildPhase() {
+    return (state) -> state.getPhase().equals("BUILD");
+  }
 
-      if (state.getPhase().equals("CHOICE")) {
+  static BotCondition dicePhase() {
+    return (state) -> state.getPhase().equals("DICE");
+  }
 
-        if (state.getRequiredConfirmation().equals("Порт")) {
-          gameSessionService.confirm(gameId, username, Map.of("name", "Порт", "addition", 0));
-        }
-        if (state.getRequiredConfirmation().equals("Радиовышка")) {
-          gameSessionService.confirm(gameId, username, Map.of("name", "Радиовышка", "diceCount", 0));
-        }
+  static BotCondition choicePhase() {
+    return (state) -> state.getPhase().equals("CHOICE");
+  }
 
-      } else if ( state.getPhase().equals("DICE") ) {
+  static BotCondition turnAfter(int turn) {
+    return (state) -> state.getTurn() > turn;
+  }
 
-        try {
-          Thread.sleep(1000);
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        }
+  static BotCondition hasCard(String cardName) {
+    return (state) -> activePlayer(state).getCards().containsKey(cardName);
+  }
 
-        gameSessionService.diceRoll(gameId, username, player.getCards().containsKey("Вокзал") ? 2 : 1);
-      } else if ( state.getPhase().equals("BUILD") ) {
+  static BotCondition not(BotCondition condition) {
+    return (state -> !condition.check(state));
+  }
 
-        try {
-          Thread.sleep(1000);
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        }
+  static BotCondition choiceTarget(String cardName) {
+    return (state -> state.getRequiredConfirmation().equals(cardName));
+  }
 
-        List<GameSessionService.CardAndCount> availableCards = gameSessionService.getAvailableCards(gameId, username)
-                .stream().filter(c -> c.count() > 0)
-                .filter(c -> c.card().getColor() == CardHandler.Color.YELLOW || c.card().getColor() == CardHandler.Color.BLUE).toList();
-        if (availableCards.isEmpty()) {
-          gameSessionService.skipBuild(gameId, username);
-        } else {
-          CardHandler cardToBuy = availableCards.stream().sorted((a, b) -> {
-            if (a.card().getColor() != b.card().getColor()) {
-              if (state.getTurn() > 6) {
-                return a.card().getColor() == CardHandler.Color.YELLOW ? 1 : -1;
-              } else {
-                return a.card().getColor() == CardHandler.Color.BLUE ? 1 : -1;
-              }
+  static BotCondition always() {
+    return (state -> true);
+  }
 
-            } else {
-              return a.card().getPrice() - b.card().getPrice();
-            }
-          }).map(GameSessionService.CardAndCount::card).reduce((first, second) -> second).get();
-          gameSessionService.buyCard(gameId, username, cardToBuy.getName());
+  static BotCondition diceIn(Integer... diceValues) {
+    return (state -> Arrays.asList(diceValues).contains(state.getLastDice()));
+  }
+
+  interface BotAction {
+    boolean execute(GameStateResponse state, GameSessionService gameSessionService, String username, String gameId);
+  }
+
+  static BotAction diceRoll(int diceCount) {
+    return (state, service, user, gameId) -> {
+      sleep(1000);
+      service.diceRoll(gameId, user, diceCount);
+      return true;
+    };
+  }
+
+  static BotAction skipBuild() {
+    return (state, service, user, gameId) -> {
+      sleep(1000);
+      service.skipBuild(gameId, user);
+      return true;
+    };
+  }
+
+  static BotAction buyCard(String... cards) {
+    return (state, service, user, gameId) -> {
+      List<String> availableCards = service.getAvailableCards(gameId, user).stream()
+              .filter(c -> c.count() > 0)
+              .map(c -> c.card().getName()).toList();
+
+      for (String card: cards) {
+        if (availableCards.contains(card)) {
+          sleep(1000);
+          service.buyCard(gameId, user, card);
+          return true;
         }
       }
+      return false;
+    };
+  }
+
+  static BotAction doChoice(Map<String, Object> data) {
+    return (state, service, user, gameId) -> {
+      Map<String, Object> confirmation = new HashMap<>();
+      confirmation.putAll(data);
+      confirmation.put("name", state.getRequiredConfirmation());
+      sleep(1000);
+      service.confirm(gameId, user, confirmation);
+      return true;
+    };
+  }
+
+  static private void sleep(long millis) {
+    try {
+      Thread.sleep(millis);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
     }
   }
 
-  class MrBox implements BotHandler {
+  static private GameStateResponse.PlayerStateDto activePlayer(GameStateResponse state) {
+    return state.getPlayers().stream().filter(p -> p.getName().equals(state.getActivePlayer())).findFirst().get();
+  }
 
-    @Override
-    public void handle(GameStateResponse state, GameSessionService gameSessionService, String username, String gameId) {
-      GameStateResponse.PlayerStateDto player = state.getPlayers()
-          .stream().filter(p -> p.getName().equals(username)).findFirst().get();
 
-      if ( state.getPhase().equals("DICE") ) {
+  class Builder {
 
-        try {
-          Thread.sleep(2000);
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        }
+    record BotRule(List<BotCondition> conditions, BotAction action) {}
 
-        gameSessionService.diceRoll(gameId, username, 1);
-      } else if ( state.getPhase().equals("BUILD") ) {
+    private List<BotRule> botRules = new ArrayList<>();
 
-        try {
-          Thread.sleep(3000);
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        }
+    void addRule(List<BotCondition> conditions, BotAction action) {
+      botRules.add(new BotRule(conditions, action));
+    }
 
-        List<GameSessionService.CardAndCount> availableCards = gameSessionService.getAvailableCards(gameId, username)
-                .stream().filter(c -> c.count() > 0).toList();
-        if (availableCards.isEmpty()) {
-          gameSessionService.skipBuild(gameId, username);
-        } else {
-          CardHandler cardToBuy = availableCards.stream().sorted((a, b) -> {
-            if (a.card().getColor() != b.card().getColor()) {
-              return a.card().getColor() == CardHandler.Color.YELLOW ? 1 : 0;
-            } else {
-              return a.card().getPrice() - b.card().getPrice();
+    public BotActionBuilder when(BotCondition... conditions) {
+      return new BotActionBuilder(this, List.of(conditions));
+    }
+
+    public BotHandler build() {
+      return new BotHandler() {
+        @Override
+        public void handle(GameStateResponse state, GameSessionService gameSessionService, String username, String gameId) {
+
+          for (BotRule rule: botRules) {
+            boolean condition = rule.conditions().stream().allMatch(c -> c.check(state));
+            boolean executed = condition && rule.action().execute(state, gameSessionService, username, gameId);
+            if (executed) {
+              break;
             }
-          }).map(GameSessionService.CardAndCount::card).findFirst().get();
-          gameSessionService.buyCard(gameId, username, cardToBuy.getName());
+          }
         }
+      };
+    }
 
-      }
+  }
+
+  @RequiredArgsConstructor
+  class BotActionBuilder {
+    private final Builder builder;
+    private final List<BotCondition> conditions;
+
+    public Builder thenDo(BotAction action) {
+      builder.addRule(conditions, action);
+      return builder;
     }
   }
+
 }

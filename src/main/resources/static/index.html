@@ -21,10 +21,10 @@
             <div class="col-md-121">
                 <form class="form-inline">
                     <div class="form-group">
-                        <label>WebSocket connection:</label>
-                        <input v-model="username" type="text" id="name" class="form-control" placeholder="Your name here...">
-                        <button v-on:click="connect" :disabled="connected" class="btn btn-default" type="button">Connect</button>
-                        <button v-on:click="disconnect" :disabled="!connected" class="btn btn-default" type="button">Disconnect
+                        <label>Введите своё имя:</label>
+                        <input v-model="username" type="text" id="name" class="form-control" placeholder="Тут ваше имя...">
+                        <button v-on:click="connect" :disabled="connected" class="btn btn-default" type="button">Подключиться</button>
+                        <button v-on:click="disconnect" :disabled="!connected" class="btn btn-default" type="button">Отключиться
                         </button>
                     </div>
                 </form>
@@ -76,7 +76,7 @@
         <div style="display:flex;flex-direction:row;gap:10px;">
             <button v-on:click="leave" class="btn btn-default">Выйти</button>
             <button v-on:click="startGame()" type="button" class="btn btn-default"> Начать </button>
-            <button v-on:click="addBot('MrBlue')" type="button" class="btn btn-default"> Добавить бота </button>
+            <button v-for="bot in bots" v-on:click="addBot(bot.name)" type="button" class="btn btn-default"> Добавить бота {{ bot.name }}</button>
         </div>
 
         <table class="table table-striped">

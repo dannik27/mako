@@ -3,6 +3,7 @@ package com.dannik.mako.controllers;
 import com.dannik.mako.messages.*;
 import com.dannik.mako.model.Game;
 import com.dannik.mako.model.User;
+import com.dannik.mako.services.BotService;
 import com.dannik.mako.services.GameService;
 import com.dannik.mako.services.GameSessionService;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,7 @@ import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.util.HtmlUtils;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 
@@ -18,6 +20,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class HelloController {
 
+  private final BotService botService;
   private final GameService gameService;
   private final GameSessionService sessionService;
 
@@ -29,7 +32,8 @@ public class HelloController {
     Optional<Game> activeGame = gameService.getActiveGame(username);
     GameDto activeGameDto = activeGame.map(GameDto::of).orElse(null);
 
-    return new Greeting("Hello, " + HtmlUtils.htmlEscape(message.getClientName()) + "!", activeGameDto);
+    return new Greeting("Hello, " + HtmlUtils.htmlEscape(message.getClientName()) + "!", activeGameDto,
+            botService.getBots().keySet().stream().map(Greeting.BotDto::new).toList());
   }
 
 //  @MessageMapping("/game/{gameId}/state")
@@ -50,7 +54,7 @@ public class HelloController {
                             @Header("username") String username) throws Exception {
     Game game = gameService.createGame(message.getName(), username);
     String activeGameId = game.getId();
-    return new Greeting("New game is created", GameDto.of(game));
+    return new Greeting("New game is created", GameDto.of(game), botService.getBots().keySet().stream().map(Greeting.BotDto::new).toList());
   }
 
   @MessageMapping("/game/{gameId}/start")
@@ -62,9 +66,9 @@ public class HelloController {
     Game game = gameService.startGame(gameId, username);
 
     if (game != null) {
-      return new Greeting("You joined the game", GameDto.of(game));
+      return new Greeting("You joined the game", GameDto.of(game), botService.getBots().keySet().stream().map(Greeting.BotDto::new).toList());
     } else {
-      return new Greeting("Game is not exist", null);
+      return new Greeting("Game is not exist", null, botService.getBots().keySet().stream().map(Greeting.BotDto::new).toList());
     }
   }
 
@@ -84,9 +88,9 @@ public class HelloController {
     Game game = gameService.joinGame(gameId, username);
 
     if (game != null) {
-      return new Greeting("You joined the game", GameDto.of(game));
+      return new Greeting("You joined the game", GameDto.of(game), botService.getBots().keySet().stream().map(Greeting.BotDto::new).toList());
     } else {
-      return new Greeting("Game is not exist", null);
+      return new Greeting("Game is not exist", null, botService.getBots().keySet().stream().map(Greeting.BotDto::new).toList());
     }
   }
 
@@ -117,9 +121,9 @@ public class HelloController {
     Game game = gameService.leaveGame(gameId, username);
 
     if (game != null) {
-      return new Greeting("You leaved the game", null);
+      return new Greeting("You leaved the game", null, botService.getBots().keySet().stream().map(Greeting.BotDto::new).toList());
     } else {
-      return new Greeting("Game is not exist", null);
+      return new Greeting("Game is not exist", null, botService.getBots().keySet().stream().map(Greeting.BotDto::new).toList());
     }
   }
 

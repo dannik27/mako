@@ -26,6 +26,7 @@ createApp({
     const showLobbyScreen = computed(() => mainScreen.value == LOBBY_SCREEN)
     const showGameScreen = computed(() => mainScreen.value == GAME_SCREEN)
     const games = ref([])
+    const bots = ref([])
     const currentGame = ref(null)
 
     const playerState = ref({money: 0})
@@ -102,6 +103,7 @@ createApp({
       stompClient.subscribe('/user/topic/greeting', (message) => {
           let body = JSON.parse(message['body'])
           console.log(body)
+          bots.value = body.bots
           if (body.activeGame) {
             currentGame.value = body.activeGame
             console.log("Game already started");
@@ -200,6 +202,9 @@ createApp({
     }
 
     const addBot = (botName) => {
+      if (currentGame.value.players.find(p => p.name === botName)) {
+        return
+      }
       stompClient.publish({
           destination: `/app/game/${currentGame.value.id}/add-bot`,
           body: JSON.stringify({'botName': botName}),
@@ -439,6 +444,7 @@ createApp({
       mainScreen,
 
       games,
+      bots,
       join,
       leave,
 

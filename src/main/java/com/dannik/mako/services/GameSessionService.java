@@ -329,6 +329,7 @@ public class GameSessionService {
       activePlayer.setLastBoughtCard(cardName);
       activePlayer.setMoney(activePlayer.getMoney() - cardHandler.getPrice());
       cardHandler.doAfterBuild(activePlayer);
+      notifier.notifyEvent(gameId, "Игрок %s купил карту %s".formatted(activePlayer.getUser().getUsername(), cardName));
     } else {
       //TODO: no money
       log.error("No money");
@@ -342,17 +343,14 @@ public class GameSessionService {
     if (yellowBought == yellowNeeded) {
       state.setPhase(GameState.GamePhase.WINNER);
       gameService.endGame(gameId, activePlayer.getUser());
+      notifier.notifyEvent(gameId, "Игрок %s победил. Ход %s".formatted(activePlayer.getUser().getUsername(), state.getTurn()));
       notifier.notifyWinner(state, username);
 
     } else {
       if (cardName.equals("Парк развлечений") || !activePlayer.hasCard("Парк развлечений") || !state.isWasDouble()) { //todo: if park bought now
-        if (state.getActivePlayerIndex() < state.getPlayers().size() - 1) {
-          state.setActivePlayerIndex(state.getActivePlayerIndex() + 1);
-        } else {
-          state.setActivePlayerIndex(0);
-        }
+        state.setNextPlayer();
       }
-      state.setTurn(state.getTurn() + 1);
+
       state.setPhase(GameState.GamePhase.DICE);
       notifier.notifyGameState(state);
     }
