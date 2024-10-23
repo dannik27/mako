@@ -30,13 +30,6 @@ html{
     border: solid 1px black;
 }
 
-.shop-group {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    grid-auto-rows: 1fr;
-    gap: 3px;
-}
-
 .bought-cards-wrapper {
   height: 25vh;
   max-height: 25vh;
@@ -61,111 +54,22 @@ html{
 
 #app {
   min-height: 100%;
+  height: 100%;
 }
 
 .game-screen {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100%;
 }
 
 .action-panel {
   flex-grow: 1;
 }
 
-.shop-card {
-    display: grid;
-    grid-template-areas:
-      "numbers price"
-      "name name"
-      "count count";
-    grid-template-columns: 3fr 2fr;
-    grid-template-rows: auto auto auto;
-    border-radius: 10px;
-    outline: black 1px solid;
-}
 
-@media (min-width: 500px) {
-  .shop-card {
-    width: 120px;
-  }
-  .card-price {
-    padding-right: 10px;
-    font-size: 10px;
-  }
-  .card-numbers {
-    padding-left: 10px;
-    font-size: 16px;
-  }
-  .card-name {
-    font: bold 100%;
-  }
-  .price-circle {
-    border-radius:10px;
-    width: 20px;
-    height: 20px;
-    line-height: 20px;
-  }
-}
 
-@media (max-width: 500px) {
-  .shop-card {
-    font-size: 6px;
-  }
-  .card-price {
-    padding-right: 1px;
-    font-size: 10px;
-    font-weight: 600;
-  }
-  .card-numbers {
-    padding-left: 2px;
-    font-size: 8px;
-  }
-  .card-name {
-    font: bold 150%;
-  }
-  .price-circle {
-    border-radius:8px;
-    width: 16px;
-    height: 16px;
-    line-height: 16px;
-  }
-  .bought-card {
-    font: bold 10px;
-  }
-}
 
-.card-numbers {
-  grid-area: numbers;
-  padding-top: 2px;
-  color: white;
-  text-shadow: 1px 1px 1px black;
-}
-
-.card-price {
-  grid-area: price;
-  justify-self: end;
-  padding-top: 1px;
-}
-
-.price-circle {
-  background-color:#FFD700;
-  outline: 2px #B8860B solid;
-  text-align:center;
-  vertical-align:middle;
-}
-
-.card-name {
-  text-align: center;
-  overflow-wrap: anywhere;
-  grid-area: name;
-}
-
-.card-count {
-  text-align: right;
-  grid-area: count;
-  padding-right: 10px;
-}
 
 .active-card:hover {
   outline: 2px #FFD700 solid;

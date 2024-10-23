@@ -1,0 +1,113 @@
+
+.shop-carousel {
+  height: 100%;
+}
+
+.shop-group {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: 1fr;
+    gap: 5px;
+    padding: 5px;
+    width: 90%;
+}
+
+.shop-card {
+    display: grid;
+    grid-template-areas:
+      "numbers count price"
+      "name name name";
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto;
+    border-radius: 10px;
+    outline: black 1px solid;
+}
+
+.card-numbers {
+  grid-area: numbers;
+  padding-top: 2px;
+  padding-left: 2px;
+  color: white;
+  text-shadow: 1px 1px 1px black;
+}
+
+.card-price {
+  grid-area: price;
+  justify-self: end;
+  padding-top: 1px;
+}
+
+.price-circle {
+  background-color:#FFD700;
+  outline: 2px #B8860B solid;
+  text-align:center;
+  vertical-align:middle;
+}
+
+.card-name {
+  text-align: center;
+  overflow-wrap: anywhere;
+  grid-area: name;
+}
+
+.card-count {
+  text-align: center;
+  grid-area: count;
+}
+
+@media (min-width: 500px) {
+  .shop-card {
+   /* width: 120px;*/
+   font-size: large;
+  }
+  .card-price {
+    padding-right: 10px;
+    font-size: 10px;
+  }
+  .card-numbers {
+    padding-left: 10px;
+    font-size: 16px;
+  }
+  .card-name {
+    font: bold 100%;
+  }
+  .price-circle {
+    border-radius:10px;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+  }
+}
+
+@media (max-width: 500px) {
+  .shop-card {
+    font-size: smaller;
+  }
+  .card-price {
+    padding-right: 1px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .card-numbers {
+    padding-left: 2px;
+    font-size: smaller;
+  }
+  .card-name {
+    font-weight: bolder;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* number of lines to show */
+            line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .price-circle {
+    border-radius:8px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+  }
+  .bought-card {
+    font: bold 10px;
+  }
+}

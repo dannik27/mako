@@ -1,9 +1,10 @@
-<div>
+<div style="display:flex;flex-direction:column;height:100%;">
     <div>
-        У вас выпало {{ lastDice }}. Доступно денег {{ playerState.money }}. Купите карту {{ cardsLeftCount('Шахта') }}
+        У вас выпало {{ lastDice }}. Доступно денег {{ playerState.money }}. Купите карту.
+        <button v-on:click="skipBuild()" type="button" class="btn btn-default">Пропуск </button>
     </div>
-    <div class="shop-group">
-        <template v-for="group in shopGroups">
+    <div class="shop-carousel" style="flex-grow:1;">
+        <div v-for="group in shopGroups" class="shop-group">
             <div v-for="card in cardsByColor(group.color)"
                  :class="['shop-card', card.canBuy ? 'active-card' : '']"
                  :style="[card.canBuy ? group.activeStyle : group.disabledStyle]"
@@ -12,6 +13,9 @@
                 <div class="card-numbers">
                     {{ card.numbers }}
                 </div>
+                <div class="card-count">
+                    <span v-if="group.color != 'YELLOW' && group.color != 'PURPLE'"> x{{ card.cardsLeft }} </span>
+                </div>
                 <div class="card-price">
                     <div class="price-circle">
                         {{ card.price }}
@@ -19,10 +23,10 @@
 
                 </div>
                 <div class="card-name">
-                    {{ card.name }} <span v-if="group.color != 'YELLOW' && group.color != 'PURPLE'"> ({{ card.cardsLeft }}) </span>
+                    {{ card.name }}
                 </div>
             </div>
-        </template>
+        </div>
     </div>
-    <button v-on:click="skipBuild()" type="button" class="btn btn-default">Пропуск </button>
+
 </div>

@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="https://unpkg.com/flickity@2/dist/flickity.min.css">
     <script src="https://unpkg.com/flickity@2/dist/flickity.pkgd.min.js"></script>
     <script src="init.js" defer></script>
+    <link href="components/card-shop.css" rel="stylesheet">
     <script src="components/card-shop.js" defer></script>
     <script src="app.js" defer></script>
 
@@ -105,10 +106,10 @@
 
         <div class="game-header" style="display:flex;flex-direction:row;gap:10px;align-items:center;">
             <span style="font-size:large;">Игра: {{ currentGame.name }}</span>
-            <button v-on:click="leaveGame()" type="button" class="btn btn-default">Выйти из игры</button>
+            <button v-on:click="leaveGame()" type="button" class="btn btn-default">Выйти</button>
             <button v-on:click="historyModal = true" type="button" class="btn btn-default">История</button>
         </div>
-        <div class="action-panel">
+        <div class="action-panel" style="display:flex;flex-direction:column;">
             <div >Сейчас ходит: {{ activePlayer }}</div>
             <div v-if="gamePhase == 'WINNER'">
                 Победил {{ winner }}
@@ -150,7 +151,7 @@
                     {{ activePlayer }} бросает кубик
                 </div>
             </div>
-            <div v-if="activePlayer == username && gamePhase == 'BUILD'">
+            <div v-if="activePlayer == username && gamePhase == 'BUILD'" style="flex-grow:1;">
 
                 <card-shop :player-state="playerState" :last-dice="lastDice" :cards="cards"
                            :opponents="opponents" :game-id="currentGame.id"></card-shop>

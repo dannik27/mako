@@ -38,7 +38,7 @@ public interface BotHandler {
   }
 
   static BotCondition hasCard(String cardName, int number) {
-    return (state) -> activePlayer(state).getCards().get(cardName) >= number;
+    return (state) -> activePlayer(state).getCards().getOrDefault(cardName, 0) >= number;
   }
 
   static BotCondition not(BotCondition condition) {

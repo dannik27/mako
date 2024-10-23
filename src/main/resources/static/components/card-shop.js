@@ -113,6 +113,15 @@ const cardShopComponent = async () => {
           }
         ])
 
+      onMounted(() => {
+            var flkty = new Flickity( '.shop-carousel', {
+              "setGallerySize": false,
+              "pageDots": false,
+              "prevNextButtons": false,
+              "cellAlign": "center",
+              "wrapAround": true
+            });
+          })
 
       const qq = ref('qwe')
 

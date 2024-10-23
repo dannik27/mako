@@ -33,10 +33,10 @@ public class BotService {
   public void init() {
     bots.put("Петька", mrBlue);
     bots.put("Матрёна", mrBox);
-    bots.put("Сельвестр", cheeseMan);
+    bots.put("Сильвестр", cheeseMan);
     userRepository.create("Петька", true);
     userRepository.create("Матрёна", true);
-    userRepository.create("Сельвестр", true);
+    userRepository.create("Сильвестр", true);
   }
 
     public void notifyBots(GameStateResponse gameState, String gameId) {
