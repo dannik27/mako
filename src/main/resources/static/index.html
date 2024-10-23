@@ -9,7 +9,12 @@
     <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/flickity@2/dist/flickity.min.css">
+    <script src="https://unpkg.com/flickity@2/dist/flickity.pkgd.min.js"></script>
+    <script src="init.js" defer></script>
+    <script src="components/card-shop.js" defer></script>
     <script src="app.js" defer></script>
+
 </head>
 <body>
 <noscript><h2 style="color: #ff0000">Seems your browser doesn't support Javascript! Websocket relies on Javascript being
@@ -73,7 +78,7 @@
         <div style="padding:10px;font-size:large;">
             Игра {{ currentGame.name }}
         </div>
-        <div style="display:flex;flex-direction:row;gap:10px;">
+        <div style="display:flex;flex-direction:row;gap:10px;flex-wrap:wrap;">
             <button v-on:click="leave" class="btn btn-default">Выйти</button>
             <button v-on:click="startGame()" type="button" class="btn btn-default"> Начать </button>
             <button v-for="bot in bots" v-on:click="addBot(bot.name)" type="button" class="btn btn-default"> Добавить бота {{ bot.name }}</button>
@@ -121,7 +126,7 @@
                 </div>
                 <div v-if="requiredConfirmation == 'Радиовышка'">
                     Вы можете перебросить кубики
-                    <button v-if="twoDices" v-on:click="confirm('Радиовышка', {diceCount: 2})" type="button"> Бросить 2 </button>
+                    <button v-if="twoDices" v-on:click="confirm('Радиовышка', {diceCount: 2})" type="button" class="btn btn-default"> Бросить 2 </button>
                     <button v-on:click="confirm('Радиовышка', {diceCount: 1})" type="button" class="btn btn-default"> Бросить 1 </button>
                     <button v-on:click="confirm('Радиовышка', {diceCount: 0})" type="button" class="btn btn-default"> Оставить </button>
                 </div>
@@ -146,32 +151,36 @@
                 </div>
             </div>
             <div v-if="activePlayer == username && gamePhase == 'BUILD'">
-                <div>
-                    У вас выпало {{ lastDice }}. Доступно денег {{ playerState.money }}. Купите карту
-                </div>
-                <div class="shop-group">
-                    <template v-for="group in shopGroups">
-                        <div v-for="card in cardsByColor(group.color)"
-                             :class="card.canBuy ? 'active-card' : ''"
-                             :style="[card.canBuy ? group.activeStyle : group.disabledStyle]"
-                             v-on:click="buyCard(card.name)"
-                        >
-                            <div class="card-numbers">
-                                {{ card.numbers }}
-                            </div>
-                            <div class="card-price">
-                                <div class="price-circle">
-                                    {{ card.price }}
-                                </div>
 
-                            </div>
-                            <div class="card-name">
-                                {{ card.name }} <span v-if="group.color != 'YELLOW' && group.color != 'PURPLE'"> ({{ card.cardsLeft }}) </span>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-                <button v-on:click="skipBuild()" type="button"> Пропуск </button>
+                <card-shop :player-state="playerState" :last-dice="lastDice" :cards="cards"
+                           :opponents="opponents" :game-id="currentGame.id"></card-shop>
+
+<!--                <div>-->
+<!--                    У вас выпало {{ lastDice }}. Доступно денег {{ playerState.money }}. Купите карту-->
+<!--                </div>-->
+<!--                <div class="shop-group">-->
+<!--                    <template v-for="group in shopGroups">-->
+<!--                        <div v-for="card in cardsByColor(group.color)"-->
+<!--                             :class="['shop-card', card.canBuy ? 'active-card' : '']"-->
+<!--                             :style="[card.canBuy ? group.activeStyle : group.disabledStyle]"-->
+<!--                             v-on:click="buyCard(card.name)"-->
+<!--                        >-->
+<!--                            <div class="card-numbers">-->
+<!--                                {{ card.numbers }}-->
+<!--                            </div>-->
+<!--                            <div class="card-price">-->
+<!--                                <div class="price-circle">-->
+<!--                                    {{ card.price }}-->
+<!--                                </div>-->
+
+<!--                            </div>-->
+<!--                            <div class="card-name">-->
+<!--                                {{ card.name }} <span v-if="group.color != 'YELLOW' && group.color != 'PURPLE'"> ({{ card.cardsLeft }}) </span>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                    </template>-->
+<!--                </div>-->
+<!--                <button v-on:click="skipBuild()" type="button"> Пропуск </button>-->
             </div>
             <div v-if="activePlayer != username && gamePhase == 'BUILD'">
                 <div>
@@ -192,19 +201,28 @@
 <!--                    </div>-->
 <!--                </div>-->
 <!--            </div>-->
+            <div v-on:click="playerInfoModal = username">
+                <b>{{ username }}</b> Деньги: {{ playerState.money }}
+                <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                    <div v-for="card in boughtCards(username)" :style="[card.style, {padding: '2px'}]">
+                        <span>{{ card.numbersStr }}</span>
+                        <span v-if="card.count > 1"> x{{ card.count }}</span>
+                        <span v-if="card.disabled > 0"> (-{{card.disabled}}) </span>
+                    </div>
+                </div>
+                <div style="display:flex;justify-content:space-evenly;">
+                    <div v-for="card in yellowCards(username)" :style="[card.style, {padding: '2px'}]">
+                        {{ card.price }}
+                    </div>
+                </div>
+            </div>
             <div v-on:click="playerInfoModal = opponent.name" v-for="opponent in opponents" :key="opponent.name" >
-                <b>{{ opponent.name }}</b> money: {{ opponent.money }}
-
-<!--                <div v-for="(count, card) in opponent.cards" :key="card" style="display:inline;padding:2px;">-->
-<!--                    <span v-if="isLastBoughtCard(opponent.name, card)"><b>{{ card }}</b></span>-->
-<!--                    <span v-else>{{ card }}</span>-->
-<!--                    <span v-if="count > 1">(x{{ count }})</span>-->
-<!--                </div>-->
-
+                <b>{{ opponent.name }}</b> Деньги: {{ opponent.money }}
                 <div style="display:flex;gap:2px;flex-wrap:wrap;">
                     <div v-for="card in boughtCards(opponent.name)" :style="[card.style, {padding: '2px'}]">
                         <span>{{ card.numbersStr }}</span>
                         <span v-if="card.count > 1"> x{{ card.count }}</span>
+                        <span v-if="card.disabled > 0"> (-{{card.disabled}}) </span>
                     </div>
                 </div>
                 <div style="display:flex;justify-content:space-evenly;">
@@ -212,26 +230,28 @@
                         {{ card.price }}
                     </div>
                 </div>
-
             </div>
         </div>
 
-        <div>
-            money: {{ playerState.money }}
-        </div>
+<!--        <div>-->
+<!--            Деньги: {{ playerState.money }}-->
+<!--        </div>-->
 
-        <div class="bought-cards-wrapper">
-            <div class="bought-cards">
-                <div v-for="card in boughtCards(username)" :key="card.name" class="bought-card" :style="[card.style]">
-                    {{ card.name }} <span v-if="card.count > 1">(x{{ card.count }})</span> {{ calculateLastChange(card.name) }}
-                </div>
-            </div>
-            <div style="display:flex;justify-content:space-around;">
-                <div v-for="card in yellowCards(username)" class="bought-card" :style="[card.style]" >
-                    {{ card.name }}
-                </div>
-            </div>
-        </div>
+<!--        <div class="bought-cards-wrapper">-->
+<!--            <div class="bought-cards">-->
+<!--                <div v-for="card in boughtCards(username)" :key="card.name" class="bought-card" :style="[card.style]">-->
+<!--                    {{ card.name }}-->
+<!--                    <span v-if="card.count > 1">(x{{ card.count }})</span>-->
+<!--                    <span v-if="card.disabled > 0"> (-{{card.disabled}}) </span>-->
+<!--                    {{ calculateLastChange(card.name) }}-->
+<!--                </div>-->
+<!--            </div>-->
+<!--            <div style="display:flex;justify-content:space-around;">-->
+<!--                <div v-for="card in yellowCards(username)" class="bought-card" :style="[card.style]" >-->
+<!--                    {{ card.name }}-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
     </div>
     <div class="modal-window" v-if="playerInfoModal">
         <div class="modal-content">
@@ -239,7 +259,11 @@
             <p> Карты игрока: {{ playerInfoModal }}</p>
             <table >
                 <tr v-for="card in boughtCards(playerInfoModal)" :key="card.name" :style="[card.style]">
-                    <td> {{ card.name }} <span v-if="card.count > 1">(x{{ card.count }})</span> {{ calculateLastChange(card.name) }} </td>
+                    <td>
+                        {{ card.name }}
+                        <span v-if="card.count > 1">(x{{ card.count }})</span>
+                        <span v-if="card.disabled > 0"> (-{{card.disabled}}) </span>
+                        {{ calculateLastChange(card.name) }} </td>
                 </tr>
             </table>
         </div>
@@ -249,7 +273,7 @@
             <span v-on:click="historyModal = false" class="close-button">&times;</span>
             <p>История:</p>
             <table>
-                <tr v-for="event in events">
+                <tr v-for="event in events.slice().reverse()">
                     <td> {{ event }} </td>
                 </tr>
             </table>

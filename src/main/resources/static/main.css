@@ -73,7 +73,7 @@ html{
   flex-grow: 1;
 }
 
-.shop-group > div {
+.shop-card {
     display: grid;
     grid-template-areas:
       "numbers price"
@@ -86,7 +86,7 @@ html{
 }
 
 @media (min-width: 500px) {
-  .shop-group > div {
+  .shop-card {
     width: 120px;
   }
   .card-price {
@@ -109,7 +109,7 @@ html{
 }
 
 @media (max-width: 500px) {
-  .shop-group > div {
+  .shop-card {
     font-size: 6px;
   }
   .card-price {

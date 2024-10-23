@@ -62,6 +62,8 @@ public interface CardHandler {
 
   void doAfterBuild(GameState.PlayerState player);
 
+  void doAfterActivate(GameState.PlayerState player);
+
   String getRequiredCard();
 
   enum Color {
@@ -84,6 +86,11 @@ public interface CardHandler {
 
   @FunctionalInterface
   interface AfterBuildFunction {
+    void handle(GameState.PlayerState player);
+  }
+
+  @FunctionalInterface
+  interface AfterActivateFunction {
     void handle(GameState.PlayerState player);
   }
 
@@ -142,6 +149,7 @@ public interface CardHandler {
     private int income;
     private HandlerFunction handlerFunction;
     private AfterBuildFunction afterBuildFunction;
+    private AfterActivateFunction afterActivateFunction;
     private String requiredCard;
     private boolean withConfirmation;
 
@@ -236,6 +244,11 @@ public interface CardHandler {
       return this;
     }
 
+    public Builder afterActivate(AfterActivateFunction afterActivateFunction) {
+      this.afterActivateFunction = afterActivateFunction;
+      return this;
+    }
+
     public Builder sightsRequired(int sightsRequired) {
       this.sightsRequired = sightsRequired;
       return this;
@@ -280,6 +293,11 @@ public interface CardHandler {
         @Override
         public void doAfterBuild(GameState.PlayerState player) {
           if (afterBuildFunction != null) {afterBuildFunction.handle(player); }
+        }
+
+        @Override
+        public void doAfterActivate(GameState.PlayerState player) {
+          if (afterActivateFunction != null) {afterActivateFunction.handle(player); }
         }
 
         @Override public String getRequiredCard() {return requiredCard;}

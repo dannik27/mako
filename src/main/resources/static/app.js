@@ -3,12 +3,8 @@
 
 const { createApp, ref, onMounted, computed } = Vue
 
-const stompClient = new StompJs.Client({
-//    brokerURL: 'ws://localhost:8080/qwe?username='
-    brokerURL: '/qwe?username='
-});
 
-
+const init = async () => {
 createApp({
   setup() {
 
@@ -256,24 +252,6 @@ createApp({
         });
     }
 
-    const buyCard = (cardName) => {
-        if (canBuyCard(cardName)) {
-          stompClient.publish({
-              destination: `/app/session/${currentGame.value.id}/buy`,
-              body: JSON.stringify({ name: cardName}),
-              headers: { username: username.value }
-          });
-        }
-    }
-
-    const skipBuild = () => {
-        stompClient.publish({
-            destination: `/app/session/${currentGame.value.id}/skip-build`,
-            body: "{}",
-            headers: { username: username.value }
-        });
-    }
-
     const calculateLastChange = (cardName) => {
       let change = playerState.value.lastMoneyChange.find(c => c.card == cardName)
       return change?.count
@@ -282,56 +260,6 @@ createApp({
     const isLastBoughtCard = (playerName, cardName) => {
       let player = opponents.value.find(o => o.name == playerName)
       return cardName == player?.lastBoughtCard
-    }
-
-    const cardsLeftCount = (cardName) => {
-      let card = cards.value.find(c => c.name == cardName)
-      if (card.color == "YELLOW" || card.color == "PURPLE") {
-        return playerState.value.cards.hasOwnProperty(cardName) ? 0 : 1
-      } else {
-
-        let occupied = 0
-
-        opponents.value.forEach(op => {
-          let occupiedByOpponent = op.cards[cardName]
-          if (occupiedByOpponent) {
-            occupied += occupiedByOpponent
-          }
-        })
-
-        let occupiedByPlayer = playerState.value.cards[cardName]
-        if (occupiedByPlayer) {
-          occupied += occupiedByPlayer
-        }
-
-        if (card.startCard) {
-          occupied -= 1
-          occupied -= opponents.value.length
-        }
-
-        return 6 - occupied
-      }
-
-    }
-
-    const canBuyCard = (cardName) => {
-      let card = cards.value.find(c => c.name == cardName)
-      return card.price <= playerState.value.money && cardsLeftCount(cardName) > 0
-    }
-
-    const cardsByColor = (color) => {
-      return cards.value.filter(c => c.color == color && cardsLeftCount(c.name) > 0).toSorted((a, b) => {
-        let valueA = a.numbers ? a.numbers[0] : a.price
-        let valueB = b.numbers ? b.numbers[0] : b.price
-        return valueA - valueB
-        }).map(c => ({
-          name: c.name,
-          price: c.price,
-          cardsLeft: cardsLeftCount(c.name),
-          numbers: c.numbers == null ? '' : c.numbers.length == 1 ? c.numbers[0] : c.numbers[0] + '-' + c.numbers[c.numbers.length - 1],
-          canBuy: canBuyCard(c.name)
-        }))
-
     }
 
     const confirm = (cardName, body) => {
@@ -375,6 +303,10 @@ createApp({
             ? playerState.value.cards
             : opponents.value.find(op => op.name == user).cards
 
+      let disabledCards = user == username.value
+            ? playerState.value.disabledCards
+            : opponents.value.find(op => op.name == user).disabledCards
+
       return Object.entries(cardsState)
         .map(e => {
         let card = cards.value.find(c => c.name == e[0])
@@ -382,6 +314,7 @@ createApp({
           return {
             name: e[0],
             count: e[1],
+            disabled: disabledCards[e[0]],
             color: card.color,
             numbers: card.numbers,
             numbersStr: card.numbers == null ? '' : card.numbers.length == 1 ? card.numbers[0] : card.numbers[0] + '-' + card.numbers[card.numbers.length - 1],
@@ -464,9 +397,6 @@ createApp({
       twoDices,
       calculateLastChange,
       isLastBoughtCard,
-      canBuyCard,
-      cardsLeftCount,
-      cardsByColor,
       winner,
       requiredConfirmation,
       confirm,
@@ -479,12 +409,12 @@ createApp({
       leaveGame,
 
       diceRoll,
-      buyCard,
-      skipBuild
     }
   }
-}).mount('#app')
+}).component("card-shop", await cardShopComponent()).mount('#app')
+}
 
+init()
 
 
 

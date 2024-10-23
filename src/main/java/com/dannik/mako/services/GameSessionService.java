@@ -49,7 +49,13 @@ public class GameSessionService {
                 .complexGreen(List.of(7), 3, c -> c.getType() == CardHandler.Type.PIG).build(),
             CardHandler.Builder.create("Мебельная фабрика", CardHandler.Type.FACTORY, 3)
                 .complexGreen(List.of(8), 3, c -> c.getType() == CardHandler.Type.GEAR).build(),
-            // vinni zavod
+            CardHandler.Builder.create("Винный завод", CardHandler.Type.FACTORY, 3)
+                .complexGreen(List.of(9), 6, c -> c.getName().equals("Виноградник"))
+                    .afterActivate(p -> {
+                      GameState.CardState cardState = p.getCards().stream().filter(c -> c.getName().equals("Винный завод")).findFirst().get();
+                      cardState.setDisabledCount(cardState.getCount());
+                    })
+                    .build(),
           // 9-10 transport company
             CardHandler.Builder.create("Завод напитков", CardHandler.Type.FACTORY, 5)
                 .forEveryCard(List.of(11), 1, c -> c.getType() == CardHandler.Type.CUP).build(),
@@ -85,6 +91,7 @@ public class GameSessionService {
             CardHandler.Builder.create("Стадион", CardHandler.Type.ADMIN, 6)
                 .purple(List.of(6), CardHandler.stadium).build(),
             CardHandler.Builder.create("Телецентр", CardHandler.Type.ADMIN, 7)
+                .withConfirmation(true)
                 .purple(List.of(6), CardHandler.tvCenter).build(),
             // Деловой центр
             CardHandler.Builder.create("Издательство", CardHandler.Type.ADMIN, 5)
@@ -264,8 +271,17 @@ public class GameSessionService {
         .filter(c -> c.getHandler().sightsRequired() == 0 || activePlayerSights <= c.getHandler().sightsRequired())
             .filter(c -> c.getHandler().getRequiredCard() == null || activePlayer.getCards().stream().anyMatch(cc -> cc.getHandler().getName().equals(c.getHandler().getRequiredCard())))
         .forEach(cardState -> {
-          cardState.getHandler().handle(activePlayer, activePlayer, opponentsBefore, state.getConfirmations(), cardState.getCount(),
+
+          int disabledCount = cardState.getDisabledCount();
+          int actualCount = cardState.getCount() - cardState.getDisabledCount();
+
+          cardState.getHandler().handle(activePlayer, activePlayer, opponentsBefore, state.getConfirmations(), actualCount,
               (message) -> notifier.notifyEvent(gameId, message));
+
+          cardState.getHandler().doAfterActivate(activePlayer);
+
+          cardState.setDisabledCount(cardState.getDisabledCount() - disabledCount);
+
         });
 
     if (activePlayer.hasCard("Ратуша") && activePlayer.getMoney() == 0) {
