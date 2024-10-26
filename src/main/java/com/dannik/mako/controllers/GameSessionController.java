@@ -57,6 +57,14 @@ public class GameSessionController {
     sessionService.skipBuild(gameId, username);
   }
 
+  @MessageMapping("/session/{gameId}/fund")
+  public void addToFund(@Payload BuyCardMessage message,
+                        @Header("username") String username,
+                        @DestinationVariable("gameId") String gameId) throws Exception {
+
+    sessionService.addToFund(gameId, username);
+  }
+
 
 
   @MessageMapping("/session/{gameId}/confirm")

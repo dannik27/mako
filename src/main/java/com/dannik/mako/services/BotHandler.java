@@ -63,7 +63,7 @@ public interface BotHandler {
 
   static BotAction diceRoll(int diceCount) {
     return (state, service, user, gameId) -> {
-      sleep(1000);
+      sleep(500);
       service.diceRoll(gameId, user, diceCount);
       return true;
     };
@@ -71,7 +71,7 @@ public interface BotHandler {
 
   static BotAction skipBuild() {
     return (state, service, user, gameId) -> {
-      sleep(1000);
+      sleep(1400);
       service.skipBuild(gameId, user);
       return true;
     };
@@ -85,7 +85,7 @@ public interface BotHandler {
 
       for (String card: cards) {
         if (availableCards.contains(card)) {
-          sleep(1000);
+          sleep(1400);
           service.buyCard(gameId, user, card);
           return true;
         }
@@ -99,7 +99,7 @@ public interface BotHandler {
       Map<String, Object> confirmation = new HashMap<>();
       confirmation.putAll(data);
       confirmation.put("name", state.getRequiredConfirmation());
-      sleep(1000);
+      sleep(600);
       service.confirm(gameId, user, confirmation);
       return true;
     };

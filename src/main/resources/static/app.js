@@ -35,6 +35,7 @@ createApp({
     const requiredConfirmation = ref('')
     const playerInfoModal = ref(false)
     const historyModal = ref(false)
+    const rulesModal = ref(false)
     const events = ref([])
 
     const cards = ref('')
@@ -77,12 +78,13 @@ createApp({
 
     const onEventReceived = (message) => {
       console.log("Event: " + message['body'])
-      events.value.push(message['body'])
+      events.value.push(JSON.parse(message['body']))
     }
 
     let subscriptions = []
 
     const subscribeGame = (gameId) => {
+        if (subscriptions.length > 0) return;
         subscriptions.push(stompClient.subscribe(`/topic/game/${gameId}/state`, onGameStateReceived));
         subscriptions.push(stompClient.subscribe(`/topic/game/${gameId}/cards`, onCardsReceived));
         subscriptions.push(stompClient.subscribe(`/topic/game/${gameId}/event`, onEventReceived));
@@ -118,6 +120,7 @@ createApp({
             }
           } else {
             unsubscribeGame()
+            events.value = []
             currentGame.value = null
             mainScreen.value = MENU_SCREEN
             stompClient.publish({
@@ -362,6 +365,22 @@ createApp({
       });
     }
 
+    const hasFund = (user) => {
+      let cardsState = user == username.value
+        ? playerState.value.cards
+        : opponents.value.find(op => op.name == user).cards
+
+      return cardsState.hasOwnProperty('Венчурный фонд')
+    }
+
+    const fundValue = (user) => {
+      let player = user == username.value
+        ? playerState.value
+        : opponents.value.find(op => op.name == user)
+
+      return player.fundValue
+    }
+
 
     const message = ref('Hello vue!')
     return {
@@ -405,10 +424,14 @@ createApp({
       yellowCards,
       playerInfoModal,
       historyModal,
+      rulesModal,
       events,
       leaveGame,
 
       diceRoll,
+
+      hasFund,
+      fundValue
     }
   }
 }).component("card-shop", await cardShopComponent()).mount('#app')

@@ -3,6 +3,8 @@
   height: 100%;
 }
 
+
+
 .shop-group {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -15,12 +17,30 @@
 .shop-card {
     display: grid;
     grid-template-areas:
-      "numbers count price"
-      "name name name";
-    grid-template-columns: 1fr 1fr 1fr;
+      "numbers count icon price"
+      "name name name name";
+    grid-template-columns: 1fr 1fr 1fr 1fr;
     grid-template-rows: auto auto;
     border-radius: 10px;
     outline: black 1px solid;
+}
+
+.card-icon {
+   grid-area: icon;
+   text-align:center;
+}
+
+.card-icon span {
+  display: inline-block;
+
+   width: 12px;
+   height: 12px;
+   /* Add background image */
+   background-image: url('../icons/gear.svg');
+   background-repeat: no-repeat;
+   background-size: 100% 100%;
+   grid-area: icon;
+   text-align:center;
 }
 
 .card-numbers {
@@ -29,6 +49,7 @@
   padding-left: 2px;
   color: white;
   text-shadow: 1px 1px 1px black;
+  white-space: nowrap;
 }
 
 .card-price {

@@ -1,0 +1,21 @@
+
+
+.cell {
+  width: 80%;
+  height: 100%;
+  margin-right: 10px;
+  background-color: #db8b86;
+}
+
+.players {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-around;
+}
+
+.player {
+  width: 48%;
+  background-color: red;
+}

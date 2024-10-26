@@ -105,50 +105,129 @@
 
 
         <div class="game-header" style="display:flex;flex-direction:row;gap:10px;align-items:center;">
-            <span style="font-size:large;">Игра: {{ currentGame.name }}</span>
-            <button v-on:click="leaveGame()" type="button" class="btn btn-default">Выйти</button>
-            <button v-on:click="historyModal = true" type="button" class="btn btn-default">История</button>
+            <span style="font-size:large;flex-grow:1;overflow: hidden;text-overflow: ellipsis;display: -webkit-box;-webkit-line-clamp: 2;line-clamp: 2;-webkit-box-orient: vertical;">
+                Игра: {{ currentGame.name }}</span>
+            <div v-on:click="rulesModal = true" style="background-color:#72A1E5;padding:5px;border-radius:5px;">
+                <img src="icons/info.svg" width="24" height="24">
+            </div>
+            <div v-on:click="historyModal = true" style="background-color:#72A1E5;padding:5px;border-radius:5px;">
+                <img src="icons/log.svg" width="24" height="24">
+            </div>
+            <div v-on:click="leaveGame()" style="background-color:#72A1E5;padding:5px;border-radius:5px;">
+                <img src="icons/exit.svg" width="24" height="24">
+            </div>
         </div>
         <div class="action-panel" style="display:flex;flex-direction:column;">
-            <div >Сейчас ходит: {{ activePlayer }}</div>
             <div v-if="gamePhase == 'WINNER'">
-                Победил {{ winner }}
-                <button v-on:click="reset()" type="button" class="btn btn-default"> Вернуться в меню</button>
+                <div style="margin: 0 auto; width:80%;margin-top:50px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+                    <div style="font-weight:bold;font-size:larger;text-align:center;">
+                        Победитель <span style="font-size:150%">{{ winner }}!</span>
+                    </div>
+                    <div style="display:flex;gap:5px;">
+                        <div v-on:click="reset()" style="font-weight:bold;text-align:center;background-color:#72A1E5;padding:10px;border-radius:5px;width:30vw;">
+                            <img src="icons/exit.svg" width="32" height="32">
+                            <p style="margin:0px">Выйти в меню</p>
+                        </div>
+                    </div>
+                </div>
+
             </div>
             <div v-if="activePlayer == username && gamePhase == 'CHOICE'">
-                <div>
-                    У вас выпало {{ lastDice }}
-                </div>
                 <div v-if="requiredConfirmation == 'Порт'">
-                    Вы можете добавить к кубику
-                    <button v-on:click="confirm('Порт', {addition: 2})" type="button" class="btn btn-default"> Добавить 2 </button>
-                    <button v-on:click="confirm('Порт', {addition: 1})" type="button" class="btn btn-default"> Добавить 1 </button>
-                    <button v-on:click="confirm('Порт', {addition: 0})" type="button" class="btn btn-default"> Не добавлять </button>
+                    <div style="margin: 0 auto; width:80%;margin-top:50px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+                        <div style="font-weight:bold;font-size:larger;text-align:center;">
+                            Выпало {{ lastDice }}. Можно добавить 1 или 2
+                        </div>
+                        <div style="display:flex;gap:5px;width:100%;">
+                            <div v-on:click="confirm('Порт', {addition: 1})"
+                                 style="flex:1 1 0;font-weight:bold;text-align:center;background-color:#72A1E5;padding:10px;border-radius:5px;">
+                                <p style="font-size:300%">+1</p>
+                                <p style="margin:0px">Добавить 1</p>
+                            </div>
+                            <div v-on:click="confirm('Порт', {addition: 2})"
+                                 style="flex:1 1 0;font-weight:bold;text-align:center;background-color:#72A1E5;padding:10px;border-radius:5px;">
+                                <p style="font-size:300%">+2</p>
+                                <p style="margin:0px">Добавить 2</p>
+                            </div>
+                        </div>
+                        <div v-on:click="confirm('Порт', {addition: 0})"
+                             style="font-weight:bold;text-align:center;background-color:#72A1E5;padding:10px;border-radius:5px;width:100%">
+                            <img src="icons/cross.svg" width="32" height="32">
+                            <p style="margin:0px">Оставить {{ lastDice }} </p>
+                        </div>
+                    </div>
                 </div>
                 <div v-if="requiredConfirmation == 'Радиовышка'">
-                    Вы можете перебросить кубики
-                    <button v-if="twoDices" v-on:click="confirm('Радиовышка', {diceCount: 2})" type="button" class="btn btn-default"> Бросить 2 </button>
-                    <button v-on:click="confirm('Радиовышка', {diceCount: 1})" type="button" class="btn btn-default"> Бросить 1 </button>
-                    <button v-on:click="confirm('Радиовышка', {diceCount: 0})" type="button" class="btn btn-default"> Оставить </button>
+                    <div style="margin: 0 auto; width:80%;margin-top:50px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+                        <div style="font-weight:bold;font-size:larger;text-align:center;">
+                            Выпало {{ lastDice }}. Можно перебросить
+                        </div>
+                        <div style="display:flex;gap:5px;width:100%;">
+                            <div v-on:click="confirm('Радиовышка', {diceCount: 1})"
+                                 style="flex:1 1 0;font-weight:bold;text-align:center;background-color:#72A1E5;padding:10px;border-radius:5px;">
+                                <img src="icons/dice.svg" width="32" height="32">
+                                <p style="margin:0px">Бросить один кубик</p>
+                            </div>
+                            <div v-if="twoDices" v-on:click="confirm('Радиовышка', {diceCount: 2})"
+                                 style="flex:1 1 0;font-weight:bold;text-align:center;background-color:#72A1E5;padding:10px;border-radius:5px;">
+                                <img src="icons/dices.svg" width="32" height="32">
+                                <p style="margin:0px">Бросить два кубика</p>
+                            </div>
+                        </div>
+                        <div v-on:click="confirm('Радиовышка', {diceCount: 0})"
+                             style="font-weight:bold;text-align:center;background-color:#72A1E5;padding:10px;border-radius:5px;width:100%">
+                            <img src="icons/cross.svg" width="32" height="32">
+                            <p style="margin:0px">Оставить {{ lastDice }} </p>
+                        </div>
+                    </div>
                 </div>
                 <div v-if="requiredConfirmation == 'Телецентр'">
-                    Телецентр! Выберите у кого забрать 5 монет
-                    <button v-for="op in opponents" v-on:click="confirm('Телецентр', {opponent: op.name})" type="button" class="btn btn-default"> {{ op.name }} </button>
+                    <div style="margin: 0 auto; width:80%;margin-top:50px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+                        <div style="font-weight:bold;font-size:larger;text-align:center;">
+                            Телецентр! Выберите у кого забрать 5 монет
+                        </div>
+                        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                            <div v-for="op in opponents" v-on:click="confirm('Телецентр', {opponent: op.name})"
+                                 style="width:45%;font-weight:bold;text-align:center;background-color:#72A1E5;padding:10px;border-radius:5px;">
+                                <p style="margin:0px">{{ op.name }}</p>
+                                <p style="margin:0px">(Деньги: {{ op.money }})</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
-
+            </div>
+            <div v-if="activePlayer != username && gamePhase == 'CHOICE'">
+                <div style="margin: 0 auto; width:80%;margin-top:50px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+                    <div style="font-weight:bold;font-size:larger;text-align:center;">
+                        <span style="font-size:150%">{{ activePlayer }}</span> делает выбор
+                        Выпало <span style="font-size:150%">{{ lastDice }}</span>
+                    </div>
+                </div>
             </div>
             <div v-if="activePlayer == username && gamePhase == 'DICE'">
-                <div>
-                    Бросайте кубик
+                <div style="margin: 0 auto; width:80%;margin-top:50px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+                    <div style="font-weight:bold;font-size:larger;text-align:center;">
+                        Бросайте кубик
+                    </div>
+                    <div style="display:flex;gap:5px;">
+                        <div v-on:click="diceRoll(1)"
+                             style="flex:1 1 0;font-weight:bold;text-align:center;background-color:#72A1E5;padding:10px;border-radius:5px;">
+                            <img src="icons/dice.svg" width="32" height="32">
+                            <p style="margin:0px">Бросить один кубик</p>
+                        </div>
+                        <div v-if="twoDices" v-on:click="diceRoll(2)"
+                             style="flex:1 1 0;font-weight:bold;text-align:center;background-color:#72A1E5;padding:10px;border-radius:5px;">
+                            <img src="icons/dices.svg" width="32" height="32">
+                            <p style="margin:0px">Бросить два кубика</p>
+                        </div>
+                    </div>
                 </div>
-                <button v-on:click="diceRoll(1)" type="button" class="btn btn-default"> Бросить один кубик </button>
-                <button v-if="twoDices" v-on:click="diceRoll(2)" type="button" class="btn btn-default"> Бросить два кубика </button>
-
             </div>
             <div v-if="activePlayer != username && gamePhase == 'DICE'">
-                <div>
-                    {{ activePlayer }} бросает кубик
+                <div style="margin: 0 auto; width:80%;margin-top:50px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+                    <div style="font-weight:bold;font-size:larger;text-align:center;">
+                        <span style="font-size:150%">{{ activePlayer }}</span> бросает кубик
+                    </div>
                 </div>
             </div>
             <div v-if="activePlayer == username && gamePhase == 'BUILD'" style="flex-grow:1;">
@@ -184,24 +263,16 @@
 <!--                <button v-on:click="skipBuild()" type="button"> Пропуск </button>-->
             </div>
             <div v-if="activePlayer != username && gamePhase == 'BUILD'">
-                <div>
-                    Выпало {{ lastDice }}
-                </div>
-                <div>
-                    {{ activePlayer }} выбирает карту
+                <div style="margin: 0 auto; width:80%;margin-top:50px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+                    <div style="font-weight:bold;font-size:larger;text-align:center;">
+                        <span style="font-size:150%">{{ activePlayer }}</span> выбирает карту.
+                        Выпало <span style="font-size:150%">{{ lastDice }}</span>
+                    </div>
                 </div>
 
             </div>
         </div>
         <div class="opponents-panel">
-<!--            <div v-on:click="showPlayerInfo(username)" >-->
-<!--                <b>{{ playerState.name }} (Вы)</b> money: {{ playerState.money }}-->
-<!--                <div style="display:flex;justify-content:space-evenly;">-->
-<!--                    <div v-for="card in yellowCards(playerState.name)" :style="[card.style, {padding: '2px'}]">-->
-<!--                        {{ card.price }}-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--            </div>-->
             <div v-on:click="playerInfoModal = username">
                 <b>{{ username }}</b> Деньги: {{ playerState.money }}
                 <div style="display:flex;gap:2px;flex-wrap:wrap;">
@@ -255,29 +326,62 @@
 <!--        </div>-->
     </div>
     <div class="modal-window" v-if="playerInfoModal">
-        <div class="modal-content">
-            <span v-on:click="playerInfoModal = false" class="close-button">&times;</span>
-            <p> Карты игрока: {{ playerInfoModal }}</p>
-            <table >
-                <tr v-for="card in boughtCards(playerInfoModal)" :key="card.name" :style="[card.style]">
-                    <td>
-                        {{ card.name }}
-                        <span v-if="card.count > 1">(x{{ card.count }})</span>
-                        <span v-if="card.disabled > 0"> (-{{card.disabled}}) </span>
-                        {{ calculateLastChange(card.name) }} </td>
-                </tr>
-            </table>
+        <div class="modal-content" style="max-height:80vh;display:flex;flex-direction:column;">
+            <div style="display:flex;flex-direction:row;font-size:120%;font-weight:bold;">
+                <span style="flex-grow:1">Игрок {{ playerInfoModal }}: </span>
+                <span v-on:click="playerInfoModal = false" class="close-button">&times;</span>
+            </div>
+            <div style="overflow-y:auto;">
+                <p style="font-weight:bold;margin-top:10px;">Карты игрока:</p>
+                <table >
+                    <tr v-for="card in boughtCards(playerInfoModal)" :key="card.name" :style="[card.style]">
+                        <td>
+                            {{ card.name }}
+                            <span v-if="card.count > 1">(x{{ card.count }})</span>
+                            <span v-if="card.disabled > 0"> (-{{card.disabled}}) </span>
+                            {{ calculateLastChange(card.name) }} </td>
+                    </tr>
+                </table>
+                <p v-if="hasFund(playerInfoModal)" style="font-weight:bold;margin-top:10px;">Венчурный фонд: {{ fundValue(playerInfoModal) }}</p>
+                <p style="font-weight:bold;margin-top:10px;">История игрока:</p>
+                <table>
+                    <tr v-for="event in events.filter(e => e.target.includes(playerInfoModal) || e.target.includes('all')).slice().reverse()">
+                        <td> {{ event.message }} </td>
+                    </tr>
+                </table>
+            </div>
+
         </div>
     </div>
     <div class="modal-window" :style="[historyModal ? { display: 'block' } : {display: 'none'}]">
-        <div class="modal-content">
-            <span v-on:click="historyModal = false" class="close-button">&times;</span>
-            <p>История:</p>
-            <table>
-                <tr v-for="event in events.slice().reverse()">
-                    <td> {{ event }} </td>
-                </tr>
-            </table>
+        <div class="modal-content" style="max-height:80vh;display:flex;flex-direction:column;">
+            <div style="display:flex;flex-direction:row;font-size:120%;font-weight:bold;">
+                <span style="flex-grow:1">История: </span>
+                <span v-on:click="historyModal = false" class="close-button">&times;</span>
+            </div>
+            <div style="overflow-y:auto;">
+                <table>
+                    <tr v-for="event in events.slice().reverse()">
+                        <td> {{ event.message }} </td>
+                    </tr>
+                </table>
+            </div>
+
+        </div>
+    </div>
+    <div class="modal-window" :style="[rulesModal ? { display: 'block' } : {display: 'none'}]">
+        <div class="modal-content" style="max-height:80vh;display:flex;flex-direction:column;">
+            <div style="display:flex;flex-direction:row;font-size:120%;font-weight:bold;">
+                <span style="flex-grow:1">Правила: </span>
+                <span v-on:click="rulesModal = false" class="close-button">&times;</span>
+            </div>
+            <div style="overflow-y:auto;">
+                <table>
+                    <tr v-for="card in cards">
+                        <td> <span :style="shopGroups.find(g => g.color === card.color).activeStyle">{{ card.name }}</span> - {{ card.description }} </td>
+                    </tr>
+                </table>
+            </div>
         </div>
     </div>
 </div>

@@ -50,17 +50,24 @@ public class UserNotifier {
     botService.notifyBots(response, gameId);
   }
 
-  record CardInfo(String name, String color, int price, List<Integer> numbers, boolean startCard) {}
+  record CardInfo(String name, String description, String color, int price, List<Integer> numbers, boolean startCard, String type) {}
 
   public void notifyCards(String gameId, Collection<CardHandler> cards) {
     List<CardInfo> cardInfo = cards.stream()
-        .map(c -> new CardInfo(c.getName(), c.getColor().name(), c.getPrice(), c.getColor() != YELLOW ? c.getNumbers() : null, c.isStartCard())).toList();
+        .map(c -> new CardInfo(c.getName(), c.getDescription(), c.getColor().name(), c.getPrice(),
+                c.getColor() != YELLOW ? c.getNumbers() : null, c.isStartCard(), c.getType().toString().toLowerCase())).toList();
 
     messagingTemplate.convertAndSend("/topic/game/%s/cards".formatted(gameId), cardInfo);
   }
 
+  record GameEvent(String message, String[] target) {}
+
+  public void notifyEvent(String gameId, String message, String... target) {
+    messagingTemplate.convertAndSend("/topic/game/%s/event".formatted(gameId), new GameEvent(message, target));
+  }
+
   public void notifyEvent(String gameId, String message) {
-    messagingTemplate.convertAndSend("/topic/game/%s/event".formatted(gameId), message);
+    notifyEvent(gameId, message, "all");
   }
 
 }

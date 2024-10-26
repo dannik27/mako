@@ -46,14 +46,20 @@ public class GameStateResponse {
     private final Map<String, Integer> cards;
     private final Map<String, Integer> disabledCards;
     private final List<GameState.MoneyChange> lastMoneyChange;
+    private final List<GameState.MoneyChange> moneyChangeHistory;
     private final String lastBoughtCard;
     private final boolean left;
+
+    private final boolean fundAvailable;
+    private final int fundValue;
 
     public static PlayerStateDto of(GameState.PlayerState state) {
       return new PlayerStateDto(state.getUser().getUsername(), state.getUser().isOnline(), state.getUser().isBot(),
           state.getMoney(), state.getCards().stream().collect(Collectors.toMap(c -> c.getHandler().getName(), GameState.CardState::getCount)),
           state.getCards().stream().collect(Collectors.toMap(c -> c.getHandler().getName(), GameState.CardState::getDisabledCount)),
-          state.getLastMoneyChange(), state.getLastBoughtCard(), state.isLeft());
+          state.getLastMoneyChange(), state.getMoneyChangeHistory(), state.getLastBoughtCard(), state.isLeft(),
+              state.hasCard("Венчурный фонд") && !state.isFundUsed(),
+              state.getFundValue());
     }
   }
 

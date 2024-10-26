@@ -1,8 +1,6 @@
 package com.dannik.mako.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
 import java.util.*;
 
@@ -26,12 +24,14 @@ public class GameState {
     return players.get(activePlayerIndex);
   }
 
-  public void setNextPlayer() {
+  public void setNextPlayer(EventNotifier notifier) {
     if (getActivePlayerIndex() < getPlayers().size() - 1) {
       setActivePlayerIndex(getActivePlayerIndex() + 1);
     } else {
       setActivePlayerIndex(0);
       setTurn(turn + 1);
+      players.forEach(p -> p.fundUsed = false);
+      notifier.notify("Ход " + turn);
     }
   }
 
@@ -57,8 +57,21 @@ public class GameState {
     private int money;
     private List<CardState> cards = new ArrayList<>();
     private List<MoneyChange> lastMoneyChange = new ArrayList<>();
+    private List<MoneyChange> moneyChangeHistory = new ArrayList<>();
     private String lastBoughtCard;
     private boolean left = false;
+
+    private boolean fundUsed = false;
+    private int fundValue = 0;
+
+    public String getName() {
+      return getUser().getUsername();
+    }
+
+    public void addToFund() {
+      fundValue += 1;
+      fundUsed = true;
+    }
 
     public boolean hasCard(String cardName) {
       return cards.stream().anyMatch(c -> c.getHandler().getName().equals(cardName));
@@ -72,6 +85,12 @@ public class GameState {
     public void addCard(CardHandler handler) {
       cards.stream().filter(c -> c.getHandler().equals(handler)).findFirst()
           .ifPresentOrElse(card -> card.count += 1, () -> cards.add(new CardState(handler, 1, 0)));
+    }
+
+    public void addMoneyChange(String cardName, int count, String opponent) {
+      MoneyChange moneyChange = new MoneyChange(cardName, count, opponent);
+      lastMoneyChange.add(moneyChange);
+      moneyChangeHistory.add(moneyChange);
     }
 
     public PlayerState(User user, List<CardHandler> startCards) {

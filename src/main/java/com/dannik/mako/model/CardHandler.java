@@ -1,8 +1,5 @@
 package com.dannik.mako.model;
 
-import com.dannik.mako.services.UserNotifier;
-
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,30 +16,32 @@ public interface CardHandler {
 
   String getName();
 
-  void handle(GameState.PlayerState player, GameState.PlayerState activePlayer, List<GameState.PlayerState> opponents,
-              Map<String, Map<String, Object>> confirmations, int count, Notifier notifier);
+  String getDescription();
 
-  static void add(String cardName, Type cardType, GameState.PlayerState player, int count, Notifier notifier) {
+  void handle(GameState.PlayerState player, GameState.PlayerState activePlayer, List<GameState.PlayerState> opponents,
+              Map<String, Map<String, Object>> confirmations, int count, EventNotifier notifier);
+
+  static void add(String cardName, GameState.PlayerState player, int count, EventNotifier notifier) {
     int finalCount = count;
     if (finalCount < 0) { // bank
       int minus = Math.min(player.getMoney(), -finalCount);
       player.setMoney(player.getMoney() - minus);
-      player.getLastMoneyChange().add(new GameState.MoneyChange(cardName, -minus, "bank"));
+      player.addMoneyChange(cardName, -minus, "bank");
       notifier.notify("Игрок %s заплатил %d монет за карту %s".formatted(player.getUser().getUsername(), minus, cardName));
     } else {
       player.setMoney(player.getMoney() + finalCount);
-      player.getLastMoneyChange().add(new GameState.MoneyChange(cardName, finalCount, null));
+      player.addMoneyChange(cardName, finalCount, null);
       notifier.notify("Игрок %s получил %d монет за карту %s".formatted(player.getUser().getUsername(), finalCount, cardName));
     }
   }
 
-  static int remove(String cardName, GameState.PlayerState fromWhom, int count, GameState.PlayerState toWhom, Notifier notifier) {
+  static int remove(String cardName, GameState.PlayerState fromWhom, int count, GameState.PlayerState toWhom, EventNotifier notifier) {
     if (fromWhom.getMoney() == 0) {
       return 0;
     }
     int minus = Math.min(fromWhom.getMoney(), count);
     fromWhom.setMoney(fromWhom.getMoney() - minus);
-    fromWhom.getLastMoneyChange().add(new GameState.MoneyChange(cardName, -minus, toWhom.getUser().getUsername()));
+    fromWhom.addMoneyChange(cardName, -minus, toWhom.getUser().getUsername());
     notifier.notify("Игрок %s заплатил %d монет игроку %s за карту %s".formatted(fromWhom.getUser().getUsername(),
         minus, toWhom.getUser().getUsername(), cardName));
     return minus;
@@ -75,13 +74,8 @@ public interface CardHandler {
   }
 
   @FunctionalInterface
-  interface Notifier {
-    void notify(String message);
-  }
-
-  @FunctionalInterface
   interface HandlerFunction {
-    void handle(GameState.PlayerState player, GameState.PlayerState activePlayer, List<GameState.PlayerState> opponents, Map<String, Map<String, Object>> confirmations, int count, Notifier notifier);
+    void handle(GameState.PlayerState player, GameState.PlayerState activePlayer, List<GameState.PlayerState> opponents, Map<String, Map<String, Object>> confirmations, int count, EventNotifier notifier);
   }
 
   @FunctionalInterface
@@ -100,7 +94,7 @@ public interface CardHandler {
       sum += remove("Стадион", opponent, count * 2, player, notifier);
     }
     if (sum > 0) {
-      add("Стадион", ADMIN, player, sum, notifier);
+      add("Стадион", player, sum, notifier);
     }
   };
 
@@ -109,7 +103,7 @@ public interface CardHandler {
     GameState.PlayerState target = opponents.stream().filter(op -> op.getUser().getUsername().equals(targetName)).findFirst()
         .orElseThrow();
     int removed = remove("Телецентр", target, 5, player, notifier);
-    add("Телецентр", ADMIN, player, removed, notifier);
+    add("Телецентр", player, removed, notifier);
   };
 
   HandlerFunction publishing = (player, activePlayer, opponents, confirmations, count, notifier) -> {
@@ -121,7 +115,7 @@ public interface CardHandler {
       sum += remove("Издательство", opponent, cardsCount, player, notifier);
     }
     if (sum > 0) {
-      add("Издательство", ADMIN, player, sum, notifier);
+      add("Издательство", player, sum, notifier);
     }
   };
 
@@ -133,13 +127,25 @@ public interface CardHandler {
       }
     }
     if (sum > 0) {
-      add("Налоговая инспекция", ADMIN, player, sum, notifier);
+      add("Налоговая инспекция", player, sum, notifier);
+    }
+  };
+
+  HandlerFunction fund = (player, activePlayer, opponents, confirmations, count, notifier) -> {
+    int fundValue = activePlayer.getFundValue();
+    int sum = 0;
+    for (GameState.PlayerState opponent : opponents) {
+      sum += remove("Венчурный фонд", opponent, count * fundValue, player, notifier);
+    }
+    if (sum > 0) {
+      add("Венчурный фонд", player, sum, notifier);
     }
   };
 
   class Builder {
 
     private String name;
+    private String description;
     private Color color;
     private Type type;
     private int price;
@@ -177,7 +183,7 @@ public interface CardHandler {
       this.income = income;
       this.numbers = numbers;
       this.handlerFunction = ((player, activePlayer, opponents, confirmations, count, notifier) -> {
-        add(name, type, player, (income + mall(player)) * count, notifier);
+        add(name, player, (income + mall(player)) * count, notifier);
       });
       return this;
     }
@@ -188,7 +194,7 @@ public interface CardHandler {
       this.numbers = numbers;
       this.handlerFunction = ((player, activePlayer, opponents, confirmations, count, notifier) -> {
         int minus = remove(name, activePlayer, (income + mall(player)) * count, player, notifier);
-        add(name, type, player, minus, notifier);
+        add(name, player, minus, notifier);
       });
       return this;
     }
@@ -204,7 +210,7 @@ public interface CardHandler {
             relatedCards[0] += card.getCount();
           }
         });
-        add(name, type, player, (income + mall(player)) * relatedCards[0] * count, notifier);
+        add(name, player, (income + mall(player)) * relatedCards[0] * count, notifier);
       });
       return this;
     }
@@ -227,7 +233,7 @@ public interface CardHandler {
             }
           });
         });
-        add(name, type, player, 1 * cupsCount.get() * count, notifier);
+        add(name, player, 1 * cupsCount.get() * count, notifier);
       });
       return this;
     }
@@ -236,6 +242,11 @@ public interface CardHandler {
       this.numbers = numbers;
       this.color = Color.PURPLE;
       this.handlerFunction = handlerFunction;
+      return this;
+    }
+
+    public Builder withDescription(String description) {
+      this.description = description;
       return this;
     }
 
@@ -279,8 +290,9 @@ public interface CardHandler {
         @Override public Color getColor() { return color; }
         @Override public Type getType() { return type; }
         @Override public String getName() { return name; }
+        @Override public String getDescription() {return description;}
         @Override
-        public void handle(GameState.PlayerState player, GameState.PlayerState activePlayer, List<GameState.PlayerState> opponents, Map<String, Map<String, Object>> confirmations, int count, Notifier notifier) {
+        public void handle(GameState.PlayerState player, GameState.PlayerState activePlayer, List<GameState.PlayerState> opponents, Map<String, Map<String, Object>> confirmations, int count, EventNotifier notifier) {
           handlerFunction.handle(player, activePlayer, opponents, confirmations, count, notifier);
         }
         @Override public List<Integer> getNumbers() { return numbers; }

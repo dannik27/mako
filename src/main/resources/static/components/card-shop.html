@@ -2,6 +2,7 @@
     <div>
         У вас выпало {{ lastDice }}. Доступно денег {{ playerState.money }}. Купите карту.
         <button v-on:click="skipBuild()" type="button" class="btn btn-default">Пропуск </button>
+        <button v-if="playerState.fundAvailable" v-on:click="addToFund()" type="button" class="btn btn-default">Монетку в венчурный фонд </button>
     </div>
     <div class="shop-carousel" style="flex-grow:1;">
         <div v-for="group in shopGroups" class="shop-group">
@@ -24,6 +25,9 @@
                 </div>
                 <div class="card-name">
                     {{ card.name }}
+                </div>
+                <div class="card-icon">
+                    <span :style="{ backgroundImage: `url('../icons/${card.icon}.svg')`}"></span>
                 </div>
             </div>
         </div>

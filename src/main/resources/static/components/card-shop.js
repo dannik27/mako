@@ -8,7 +8,6 @@ const cardShopComponent = async () => {
   return ({
     template: template,
     props: ['lastDice', 'playerState', 'cards', 'opponents', 'gameId'],
-//    data: () => ({ item: 'test' })
     setup(props) {
 
       let cards = props.cards
@@ -59,6 +58,7 @@ const cardShopComponent = async () => {
         return valueA - valueB
         }).map(c => ({
           name: c.name,
+          icon: c.type,
           price: c.price,
           cardsLeft: cardsLeftCount(c.name),
           numbers: c.numbers == null ? '' : c.numbers.length == 1 ? c.numbers[0] : c.numbers[0] + '-' + c.numbers[c.numbers.length - 1],
@@ -68,22 +68,30 @@ const cardShopComponent = async () => {
     }
 
     const buyCard = (cardName) => {
-            if (canBuyCard(cardName)) {
-              stompClient.publish({
-                  destination: `/app/session/${gameId}/buy`,
-                  body: JSON.stringify({ name: cardName}),
-                  headers: { username: playerState.name }
-              });
-            }
+        if (canBuyCard(cardName)) {
+          stompClient.publish({
+              destination: `/app/session/${gameId}/buy`,
+              body: JSON.stringify({ name: cardName}),
+              headers: { username: playerState.name }
+          });
         }
+    }
 
-        const skipBuild = () => {
-            stompClient.publish({
-                destination: `/app/session/${gameId}/skip-build`,
-                body: "{}",
-                headers: { username: playerState.name }
-            });
-        }
+    const skipBuild = () => {
+        stompClient.publish({
+            destination: `/app/session/${gameId}/skip-build`,
+            body: "{}",
+            headers: { username: playerState.name }
+        });
+    }
+
+    const addToFund = () => {
+        stompClient.publish({
+            destination: `/app/session/${gameId}/fund`,
+            body: "{}",
+            headers: { username: playerState.name }
+        });
+    }
 
     const shopGroups = ref([
           {
@@ -132,7 +140,8 @@ const cardShopComponent = async () => {
         cardsByColor,
         shopGroups,
         buyCard,
-        skipBuild
+        skipBuild,
+        addToFund
       }
     }
   })
